@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
+const fs = require('fs');
 const dataService = require('./services/dataService');
 const apiRoutes = require('./routes/api');
 
