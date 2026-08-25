@@ -1,0 +1,22 @@
+{
+  "name": "agriprice-tracker",
+  "version": "1.0.0",
+  "description": "Full-Stack Agricultural Market Intelligence & ML Price Forecasting Platform",
+  "main": "backend/server.js",
+  "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && npm --prefix backend install",
+    "start": "node backend/server.js",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev"
+  },
+  "keywords": [
+    "agritech",
+    "mandi-prices",
+    "machine-learning",
+    "price-forecasting",
+    "react",
+    "express"
+  ],
+  "author": "BOMMUGOWTHAMSAIREDDY97",
+  "license": "MIT"
+}

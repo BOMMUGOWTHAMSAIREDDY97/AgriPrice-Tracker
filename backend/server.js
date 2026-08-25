@@ -15,15 +15,25 @@ app.use(morgan('dev'));
 // API Routes
 app.use('/api', apiRoutes);
 
-// Root health & welcome
-app.get('/', (req, res) => {
-  res.json({
-    name: "AgriPrice Tracker Backend API",
-    version: "1.0.0",
-    docs: "/api/health",
-    status: "active"
+// Serve Frontend Static Assets in Production
+const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(frontendDist, 'index.html'));
   });
-});
+} else {
+  // Root health & welcome for API-only mode
+  app.get('/', (req, res) => {
+    res.json({
+      name: "AgriPrice Tracker Backend API",
+      version: "1.0.0",
+      docs: "/api/health",
+      status: "active"
+    });
+  });
+}
 
 async function startServer() {
   try {
