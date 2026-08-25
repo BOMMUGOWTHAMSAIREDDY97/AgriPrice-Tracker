@@ -13,25 +13,29 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-// API Routes
+// API Routes — must be registered BEFORE static/catch-all
 app.use('/api', apiRoutes);
 
-// Serve Frontend Static Assets in Production
+// Serve built React frontend (production)
 const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
-if (fs.existsSync(frontendDist)) {
+const indexHtml = path.join(frontendDist, 'index.html');
+
+if (fs.existsSync(indexHtml)) {
+  // Serve static assets (JS, CSS, images)
   app.use(express.static(frontendDist));
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api')) return next();
-    res.sendFile(path.join(frontendDist, 'index.html'));
+
+  // SPA catch-all: send index.html for any non-API route
+  app.get('*', (req, res) => {
+    res.sendFile(indexHtml);
   });
 } else {
-  // Root health & welcome for API-only mode
+  // Development / API-only mode
   app.get('/', (req, res) => {
     res.json({
-      name: "AgriPrice Tracker Backend API",
-      version: "1.0.0",
-      docs: "/api/health",
-      status: "active"
+      name: 'AgriPrice Tracker Backend API',
+      version: '1.0.0',
+      docs: '/api/health',
+      status: 'active'
     });
   });
 }
@@ -41,7 +45,7 @@ async function startServer() {
     console.log('Initializing AgriPrice Tracker data service...');
     await dataService.loadData();
     app.listen(PORT, () => {
-      console.log(`🌾 AgriPrice Tracker Backend Server running on http://localhost:${PORT}`);
+      console.log(`AgriPrice Tracker running on port ${PORT}`);
     });
   } catch (err) {
     console.error('Fatal error starting server:', err);
