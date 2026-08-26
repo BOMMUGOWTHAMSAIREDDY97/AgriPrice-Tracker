@@ -149,12 +149,63 @@ exports.syncDataGov = async (req, res) => {
   }
 };
 
-exports.getDataGovInfo = async (req, res) => {
+exports.getGeminiAdvisory = async (req, res) => {
   try {
-    const dataGovSync = require('../services/dataGovSync');
-    res.json(dataGovSync.getInfo());
+    const geminiService = require('../services/geminiService');
+    const result = await geminiService.getAdvisory(req.body || {});
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.chatGemini = async (req, res) => {
+  try {
+    const geminiService = require('../services/geminiService');
+    const result = await geminiService.chat(req.body || {});
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Gemini TTS – generates speech audio for a given text and language
+exports.getGeminiTTS = async (req, res) => {
+  try {
+    const { text, language = 'English', bcp47 = 'en-IN' } = req.body || {};
+    if (!text) return res.status(400).json({ error: 'text is required' });
+
+    const geminiService = require('../services/geminiService');
+    const audioResult = await geminiService.textToSpeech({ text, language, bcp47 });
+    res.json(audioResult);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Direct Audio Stream (MP3) for any Indian Language
+exports.getTTSAudio = async (req, res) => {
+  try {
+    const text = req.query.text || '';
+    const tl = req.query.tl || 'en';
+    if (!text.trim()) {
+      return res.status(400).send('Missing text parameter');
+    }
+
+    const geminiService = require('../services/geminiService');
+    const audioBuffer = await geminiService.fetchTTSAudio({ text, tl });
+    res.set({
+      'Content-Type': 'audio/mpeg',
+      'Content-Length': audioBuffer.length,
+      'Cache-Control': 'public, max-age=86400'
+    });
+    res.send(audioBuffer);
+  } catch (error) {
+    console.error('getTTSAudio error:', error.message);
+    res.status(500).send('Audio generation failed');
+  }
+};
+
+
+
 

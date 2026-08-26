@@ -67,8 +67,11 @@ export async function fetchDashboardKPIs(commodity = 'Tomato', market = 'Rajkot(
 
 export async function fetchPriceHistory(commodity = 'Tomato', market = 'Rajkot(Veg.Sub Yard)', timeframe = '30d') {
   try {
-    const params = new URLSearchParams({ commodity, market, timeframe });
-    const res = await fetch(`${API_BASE}/price-history?${params.toString()}`);
+    // _ts cache-buster prevents browser 304 caching when timeframe changes
+    const params = new URLSearchParams({ commodity, market, timeframe, _ts: Date.now() });
+    const res = await fetch(`${API_BASE}/price-history?${params.toString()}`, {
+      cache: 'no-store'
+    });
     return await res.json();
   } catch (err) {
     console.error('fetchPriceHistory error:', err);
@@ -175,4 +178,39 @@ export async function fetchDataGovInfo() {
     };
   }
 }
+
+export async function fetchGeminiAdvisory({ commodity, market, state, currentPrice, forecastPrice, expectedChange, horizon, action, language = 'English' }) {
+  try {
+    const res = await fetch(`${API_BASE}/gemini/advisory`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commodity, market, state, currentPrice, forecastPrice, expectedChange, horizon, action, language })
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('fetchGeminiAdvisory error:', err);
+    return {
+      status: 'error',
+      commentary: 'AI market advisory temporarily unavailable.'
+    };
+  }
+}
+
+export async function sendGeminiChat({ message, context, language = 'English' }) {
+  try {
+    const res = await fetch(`${API_BASE}/gemini/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, context, language })
+    });
+    return await res.json();
+  } catch (err) {
+    console.error('sendGeminiChat error:', err);
+    return {
+      status: 'error',
+      reply: 'Failed to communicate with Mandi AI.'
+    };
+  }
+}
+
 

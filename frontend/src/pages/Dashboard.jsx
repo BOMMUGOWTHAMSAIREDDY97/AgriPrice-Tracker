@@ -12,13 +12,16 @@ import {
   Compass, 
   Clock, 
   Zap,
-  Tag
+  Tag,
+  Sprout,
+  SunMedium
 } from 'lucide-react';
 import KPICard from '../components/KPICard';
 import PriceTrendChart from '../components/PriceTrendChart';
 import MarketComparisonChart from '../components/MarketComparisonChart';
 import DecisionBadge from '../components/DecisionBadge';
 import ProfitSimulator from '../components/ProfitSimulator';
+import GeminiAdvisor from '../components/GeminiAdvisor';
 import FilterBar from '../components/FilterBar';
 import { 
   fetchCommodities, 
@@ -119,19 +122,33 @@ export default function Dashboard() {
     setTimeframe('30d');
   };
 
-  const currentPrice = kpis.current_price || 2800;
-  const forecastPrice = forecastData?.forecast_price || Math.round(currentPrice * 1.08);
-  const expectedChange = forecastData?.expected_change_pct || kpis.change_7d || 8.4;
+  const currentPrice = (forecastData && forecastData.current_price) ? forecastData.current_price : (kpis.current_price || 2800);
+  const expectedChange = (forecastData && forecastData.expected_change_pct !== undefined) 
+    ? forecastData.expected_change_pct 
+    : (kpis.change_7d !== undefined ? kpis.change_7d : 8.4);
+  const forecastPrice = (forecastData && forecastData.forecast_price) 
+    ? forecastData.forecast_price 
+    : Math.round(currentPrice * (1 + (expectedChange / 100)));
   const diffPer1000Kg = Math.round(((forecastPrice - currentPrice) / 100) * 1000);
 
   return (
     <div className="space-y-6 pb-12">
       
       {/* Hero Intelligence Banner */}
-      <div className="relative rounded-3xl overflow-hidden glass-panel border border-slate-700/60 p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-slate-900/90 to-brand-950/40">
+      <div className="relative rounded-3xl overflow-hidden glass-panel border border-brand-800/30 p-6 sm:p-8 bg-gradient-to-br from-slate-950 via-slate-900/90 to-brand-950/20 shadow-2xl">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="max-w-4xl relative z-10">
+        {/* Natural Farm Sun & field photo visual */}
+        <div className="absolute inset-y-0 right-0 w-full lg:w-[45%] opacity-45 lg:opacity-75 pointer-events-none overflow-hidden select-none" aria-hidden="true">
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/50 to-transparent z-10" />
+          <img 
+            src="/farm-hero.jpg" 
+            alt="Nature field" 
+            className="w-full h-full object-cover object-right"
+          />
+        </div>
+        
+        <div className="max-w-4xl relative z-10 lg:pr-20">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/15 border border-brand-500/30 text-xs font-semibold text-brand-400 mb-3">
             <Zap className="w-3.5 h-3.5" />
             <span>Real-Time Indian Mandi Intelligence</span>
@@ -300,6 +317,18 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* Google Gemini AI Market Advisor & Mandi Copilot */}
+      <GeminiAdvisor
+        commodity={selectedCommodity}
+        market={selectedMarket}
+        state={selectedState}
+        currentPrice={currentPrice}
+        forecastPrice={forecastPrice}
+        expectedChange={expectedChange}
+        horizon={7}
+        action={forecastData?.recommendation?.action || (expectedChange >= 3 ? 'WAIT' : expectedChange <= -3 ? 'SELL' : 'MONITOR')}
+      />
 
       {/* Interactive What-If Profit Simulator */}
       <ProfitSimulator

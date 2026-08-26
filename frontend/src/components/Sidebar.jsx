@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import DataSyncModal from './DataSyncModal';
 import { 
   TrendingUp, 
   BarChart3, 
@@ -18,14 +20,19 @@ import {
   Sliders,
   Layers,
   HelpCircle,
-  ExternalLink
+  ExternalLink,
+  LogOut,
+  RefreshCw,
+  Sprout
 } from 'lucide-react';
 
 export default function Sidebar() {
   const [isOpenMobile, setIsOpenMobile] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const navSections = [
     {
@@ -49,10 +56,10 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Top Header */}
-      <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-white">
+      <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-slate-950 border-b border-brand-800/40 text-white">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center shadow-md shadow-brand-500/20">
-            <span className="text-lg">🌾</span>
+            <Sprout className="w-4 h-4 text-slate-950" />
           </div>
           <div>
             <span className="font-extrabold text-base tracking-tight">
@@ -62,7 +69,7 @@ export default function Sidebar() {
         </Link>
         <button
           onClick={() => setIsOpenMobile(!isOpenMobile)}
-          className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white"
+          className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
           aria-label="Toggle Navigation Menu"
         >
           {isOpenMobile ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -82,7 +89,7 @@ export default function Sidebar() {
         className={`
           fixed lg:sticky top-0 left-0 z-50 h-screen
           flex flex-col justify-between
-          bg-slate-900/95 backdrop-blur-xl border-r border-slate-800/80
+          nature-sidebar border-r border-brand-800/20
           transition-all duration-300 ease-in-out
           ${isOpenMobile ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'}
           ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}
@@ -90,14 +97,14 @@ export default function Sidebar() {
       >
         {/* Top Section: Logo & Toggle */}
         <div>
-          <div className="flex items-center justify-between h-16 px-4 border-b border-slate-800/80">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-brand-800/20">
             <Link 
               to="/" 
               onClick={() => setIsOpenMobile(false)}
               className="flex items-center gap-3 overflow-hidden group"
             >
               <div className="w-10 h-10 min-w-[40px] rounded-xl bg-gradient-to-tr from-brand-600 via-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-brand-500/25 group-hover:scale-105 transition-transform duration-200">
-                <span className="text-xl">🌾</span>
+                <Sprout className="w-5 h-5 text-slate-950" />
               </div>
               
               {!isCollapsed && (
@@ -118,7 +125,7 @@ export default function Sidebar() {
             {/* Desktop Collapse / Expand Button */}
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700/60 transition"
+              className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 border border-brand-800/20 transition"
               title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
             >
               {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -147,8 +154,8 @@ export default function Sidebar() {
                         className={`
                           group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 relative
                           ${isActive
-                            ? 'bg-gradient-to-r from-brand-500/20 to-emerald-500/10 text-brand-400 border border-brand-500/30 shadow-sm shadow-brand-500/10 font-semibold'
-                            : 'text-slate-300 hover:text-white hover:bg-slate-800/70 border border-transparent'
+                            ? 'bg-gradient-to-r from-brand-800/40 to-brand-900/25 text-brand-300 border border-brand-500/30 shadow-sm shadow-brand-500/10 font-bold'
+                            : 'text-slate-300 hover:text-white hover:bg-slate-900/60 border border-transparent'
                           }
                           ${isCollapsed ? 'justify-center px-0' : ''}
                         `}
@@ -218,29 +225,37 @@ export default function Sidebar() {
 
           {/* Live Data Feed Status */}
           {!isCollapsed ? (
-            <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-1.5">
+            <button
+              onClick={() => setShowSyncModal(true)}
+              className="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/40 space-y-1.5 transition group"
+              title="Click to Open Live Daily Sync Hub"
+            >
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-slate-300 font-semibold">
+                <div className="flex items-center gap-1.5 text-slate-300 font-semibold group-hover:text-emerald-400">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
-                  <span>Mandi Feed Live</span>
+                  <span>Daily Feed Live</span>
                 </div>
-                <Database className="w-3.5 h-3.5 text-brand-400" />
+                <RefreshCw className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-400 group-hover:rotate-180 transition-transform duration-300" />
               </div>
               <div className="text-[11px] text-slate-400 flex items-center justify-between">
                 <span>298,232 Records</span>
-                <span className="text-emerald-400 font-medium">1,622 Mandis</span>
+                <span className="text-emerald-400 font-medium">Sync Data &rarr;</span>
               </div>
-            </div>
+            </button>
           ) : (
-            <div className="flex justify-center" title="298K+ Records Live">
-              <div className="p-2 rounded-lg bg-slate-800/80 text-emerald-400 relative">
+            <button
+              onClick={() => setShowSyncModal(true)}
+              className="w-full flex justify-center"
+              title="Live Daily Sync Hub"
+            >
+              <div className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-emerald-400 relative transition">
                 <Database className="w-4 h-4" />
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500"></span>
               </div>
-            </div>
+            </button>
           )}
 
           {/* User Profile Card */}
@@ -248,33 +263,48 @@ export default function Sidebar() {
             flex items-center gap-3 p-2 rounded-xl bg-slate-800/40 border border-slate-800 text-slate-200
             ${isCollapsed ? 'justify-center p-2' : ''}
           `}>
-            <div className="relative">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-500 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-md shadow-brand-500/20">
-                <User className="w-4 h-4" />
-              </div>
+            <div className="relative flex-shrink-0">
+              {user?.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName || 'User'}
+                  className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/40"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-500 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-md shadow-brand-500/20">
+                  <User className="w-4 h-4" />
+                </div>
+              )}
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-900" />
             </div>
 
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-slate-100 truncate">Trader Pro</div>
-                <div className="text-[10px] text-emerald-400/90 font-medium truncate">Mandi Intelligence v1.0</div>
+                <div className="text-xs font-bold text-slate-100 truncate">{user?.displayName || 'Trader'}</div>
+                <div className="text-[10px] text-slate-400 truncate">{user?.email || ''}</div>
               </div>
             )}
 
             {!isCollapsed && (
               <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className={`p-1.5 rounded-lg transition ${showNotifications ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-700/60'}`}
-                title="Notifications"
+                onClick={logout}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                title="Sign out"
               >
-                <Bell className="w-4 h-4" />
+                <LogOut className="w-4 h-4" />
               </button>
             )}
           </div>
 
         </div>
       </aside>
+
+      {/* Live Data Sync Modal */}
+      <DataSyncModal
+        isOpen={showSyncModal}
+        onClose={() => setShowSyncModal(false)}
+        onSyncComplete={() => window.location.reload()}
+      />
     </>
   );
 }

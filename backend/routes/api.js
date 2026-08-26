@@ -27,8 +27,14 @@ router.post('/forecast', controller.getForecast);
 // Market Intelligence Insights
 router.get('/insights', controller.getInsights);
 
-// Data.gov.in Live Sync API
+// Google Gemini AI Advisory & Copilot
+router.post('/gemini/advisory', controller.getGeminiAdvisory);
+router.post('/gemini/chat', controller.chatGemini);
+router.post('/gemini/tts', controller.getGeminiTTS);
+router.get('/gemini/tts-audio', controller.getTTSAudio);
+
+// Data.gov.in Live Agmarknet Sync
 router.post('/sync-data-gov', controller.syncDataGov);
-router.get('/data-gov-info', controller.getDataGovInfo);
 
 module.exports = router;
+

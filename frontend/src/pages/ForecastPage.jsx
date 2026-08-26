@@ -26,6 +26,13 @@ import DecisionBadge from '../components/DecisionBadge';
 import ProfitSimulator from '../components/ProfitSimulator';
 import { fetchCommodities, fetchMarkets, fetchForecast } from '../services/api';
 
+const formatDate = (value, options) => {
+  if (!value) return 'Unknown date';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat('en-IN', { timeZone: 'UTC', ...options }).format(date);
+};
+
 export default function ForecastPage() {
   const [commodities, setCommodities] = useState([]);
   const [markets, setMarkets] = useState([]);
@@ -84,7 +91,7 @@ export default function ForecastPage() {
       if (dStr && dStr.includes(' ')) dStr = dStr.split(' ')[0];
       combinedChartData.push({
         date: dStr,
-        displayDate: dStr ? dStr.slice(5) : '',
+        displayDate: formatDate(dStr, { day: '2-digit', month: 'short' }),
         historical_price: item.modal_price,
         forecast_price: null,
         lower_range: null,
@@ -105,7 +112,7 @@ export default function ForecastPage() {
     (forecastResult.forecast_series || []).forEach(f => {
       combinedChartData.push({
         date: f.date,
-        displayDate: f.date ? f.date.slice(5) : '',
+        displayDate: formatDate(f.date, { day: '2-digit', month: 'short' }),
         historical_price: null,
         forecast_price: f.forecast_price,
         lower_range: f.lower_range,
@@ -124,7 +131,7 @@ export default function ForecastPage() {
       return (
         <div className="glass-panel bg-slate-900/95 border border-slate-700 rounded-xl p-3.5 shadow-2xl text-xs space-y-1.5 z-50">
           <div className="font-bold text-white border-b border-slate-800 pb-1 flex items-center justify-between gap-4">
-            <span>{pData.date}</span>
+            <span>{formatDate(pData.date, { day: '2-digit', month: 'short', year: 'numeric' })}</span>
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isHistorical ? 'bg-slate-800 text-slate-300' : 'bg-brand-500/20 text-brand-400'}`}>
               {isHistorical ? 'Historical' : 'ML Forecast'}
             </span>

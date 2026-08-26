@@ -1,99 +1,638 @@
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ──────────────────────────────────────────────────────
+   FARM FUSION — NATURE & FARMING THEME
+   Palette: Earth Brown · Crop Green · Harvest Gold · Dawn Sky
+────────────────────────────────────────────────────── */
+
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased selection:bg-brand-500 selection:text-white;
-    background-color: #030712;
-    background-image: 
-      /* Ambient glowing mesh spheres */
-      radial-gradient(at 15% 10%, rgba(16, 185, 129, 0.16) 0px, transparent 45%),
-      radial-gradient(at 85% 15%, rgba(14, 165, 233, 0.12) 0px, transparent 40%),
-      radial-gradient(at 50% 60%, rgba(20, 184, 166, 0.08) 0px, transparent 55%),
-      radial-gradient(at 90% 85%, rgba(16, 185, 129, 0.10) 0px, transparent 40%),
-      radial-gradient(at 10% 90%, rgba(99, 102, 241, 0.08) 0px, transparent 45%),
-      /* Micro dot grid texture */
-      radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 32px 32px;
-    background-attachment: fixed;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #f0ede6;
+    min-width: 320px;
+    background-color: #0e1a0b;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* Layered nature background */
+    background-image:
+      /* Morning mist gradient overlay */
+      linear-gradient(180deg,
+        rgba(10, 18, 8, 0.82) 0%,
+        rgba(8, 20, 6, 0.70) 30%,
+        rgba(12, 22, 8, 0.78) 70%,
+        rgba(14, 12, 4, 0.88) 100%
+      ),
+      /* Subtle soil-tone banding */
+      repeating-linear-gradient(
+        175deg,
+        transparent 0,
+        transparent 60px,
+        rgba(120, 80, 20, 0.03) 60px,
+        rgba(120, 80, 20, 0.03) 61px
+      ),
+      /* Hero farm field image */
+      url('/farm-hero.jpg');
+
+    background-size: 100% 100%, 100% 100%, cover;
+    background-position: center, center, center top;
+    background-attachment: fixed, fixed, fixed;
+    background-repeat: no-repeat;
   }
 }
 
-/* Custom sleek modern scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ── AMBIENT NATURE LAYER 1: Morning glow at top ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  background:
+    /* Dawn sky at top */
+    radial-gradient(ellipse 80% 28% at 50% -6%, rgba(253, 186, 116, 0.22), transparent),
+    /* Sun warmth glow */
+    radial-gradient(ellipse 50% 18% at 72% 3%, rgba(251, 191, 36, 0.18), transparent),
+    /* Ground depth at bottom */
+    radial-gradient(ellipse 100% 30% at 50% 108%, rgba(78, 45, 12, 0.38), transparent),
+    /* Left green forest glow */
+    radial-gradient(ellipse 35% 50% at -4% 55%, rgba(34, 90, 30, 0.22), transparent),
+    /* Right field glow */
+    radial-gradient(ellipse 35% 50% at 106% 55%, rgba(16, 100, 44, 0.18), transparent);
 }
 
-::-webkit-scrollbar-track {
-  background: rgba(3, 7, 18, 0.6);
+/* ── AMBIENT NATURE LAYER 2: Crop field texture ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  opacity: 0.18;
+  background:
+    /* Crop row lines (perspective simulation) */
+    repeating-linear-gradient(
+      172deg,
+      transparent 0,
+      transparent 48px,
+      rgba(163, 230, 53, 0.25) 48px,
+      rgba(163, 230, 53, 0.25) 49px
+    );
+  mask-image: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 45%);
+  animation: fieldBreeze 22s ease-in-out infinite alternate;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.7);
-  border-radius: 6px;
+@keyframes fieldBreeze {
+  0%   { transform: translateX(0px) scaleX(1); opacity: 0.18; }
+  50%  { transform: translateX(2px) scaleX(1.002); opacity: 0.22; }
+  100% { transform: translateX(-1px) scaleX(0.999); opacity: 0.15; }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(34, 197, 94, 0.7);
+@media (prefers-reduced-motion: reduce) {
+  body::after { animation: none; }
 }
 
-/* Ultra-refined Glassmorphism */
+/* ── APP SHELL ── */
+.app-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+/* ── NATURE GLASSMORPHISM PANELS ── */
 .glass-panel {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(11, 19, 36, 0.85) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    135deg,
+    rgba(10, 28, 8, 0.82) 0%,
+    rgba(8, 24, 6, 0.88) 60%,
+    rgba(14, 20, 4, 0.84) 100%
+  );
+  backdrop-filter: blur(20px) saturate(140%) brightness(1.05);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(134, 190, 60, 0.16);
+  box-shadow:
+    0 16px 40px -8px rgba(0, 0, 0, 0.55),
+    0 4px 16px -4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(220, 252, 180, 0.07),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.18);
 }
 
 .glass-panel-subtle {
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(10, 26, 6, 0.60);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(134, 190, 60, 0.10);
 }
 
 .glass-panel-hover {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-panel-hover:hover {
-  background: linear-gradient(135deg, rgba(17, 27, 49, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
-  border-color: rgba(34, 197, 94, 0.35);
+  background: linear-gradient(
+    135deg,
+    rgba(14, 40, 10, 0.94) 0%,
+    rgba(10, 32, 8, 0.96) 100%
+  );
+  border-color: rgba(163, 230, 53, 0.32);
   transform: translateY(-2px);
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6), 0 0 20px rgba(34, 197, 94, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 24px 48px -10px rgba(0, 0, 0, 0.65),
+    0 0 32px rgba(101, 163, 28, 0.14),
+    inset 0 1px 0 rgba(220, 252, 180, 0.12);
 }
 
-/* Ambient glow utilities */
+/* ── NATURE KPI CARD ── */
+.nature-kpi-card {
+  background: linear-gradient(
+    145deg,
+    rgba(12, 30, 8, 0.90) 0%,
+    rgba(9, 22, 6, 0.94) 100%
+  );
+  border: 1px solid rgba(101, 163, 28, 0.20);
+  border-top: 2px solid rgba(134, 190, 60, 0.30);
+  box-shadow:
+    0 12px 32px -6px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(217, 249, 157, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(18px);
+  transition: all 0.25s ease;
+}
+
+.nature-kpi-card:hover {
+  border-color: rgba(163, 230, 53, 0.38);
+  box-shadow:
+    0 18px 40px -8px rgba(0, 0, 0, 0.6),
+    0 0 24px rgba(101, 163, 28, 0.12);
+  transform: translateY(-2px);
+}
+
+/* ── HARVEST BADGE (BUY/SELL/WAIT) ── */
+.badge-harvest-buy {
+  background: linear-gradient(135deg, rgba(34, 120, 20, 0.30), rgba(16, 80, 8, 0.40));
+  border: 1px solid rgba(101, 163, 28, 0.45);
+  color: #a3e635;
+}
+
+.badge-harvest-sell {
+  background: linear-gradient(135deg, rgba(160, 40, 20, 0.30), rgba(100, 20, 10, 0.40));
+  border: 1px solid rgba(220, 80, 60, 0.40);
+  color: #fca5a5;
+}
+
+.badge-harvest-wait {
+  background: linear-gradient(135deg, rgba(160, 120, 8, 0.30), rgba(100, 80, 4, 0.40));
+  border: 1px solid rgba(251, 191, 36, 0.40);
+  color: #fde68a;
+}
+
+/* ── NATURE NAV BAR ── */
+.nature-nav {
+  background: linear-gradient(
+    180deg,
+    rgba(6, 16, 4, 0.96) 0%,
+    rgba(8, 18, 5, 0.92) 100%
+  );
+  backdrop-filter: blur(24px) saturate(120%);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(101, 163, 28, 0.18);
+  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(134, 190, 60, 0.08);
+}
+
+/* ── CROP ROW DIVIDERS ── */
+.crop-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(101, 163, 28, 0.25) 20%,
+    rgba(163, 230, 53, 0.40) 50%,
+    rgba(101, 163, 28, 0.25) 80%,
+    transparent 100%
+  );
+}
+
+/* ── SOIL-TEXTURED BUTTONS ── */
+.btn-harvest {
+  background: linear-gradient(135deg, #2d6a14, #1e4d0a);
+  border: 1px solid rgba(163, 230, 53, 0.30);
+  color: #d9f99d;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.btn-harvest:hover {
+  background: linear-gradient(135deg, #3a8818, #276010);
+  border-color: rgba(163, 230, 53, 0.55);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 20px rgba(101, 163, 28, 0.20);
+  transform: translateY(-1px);
+}
+
+.btn-harvest:active {
+  transform: translateY(0);
+}
+
+/* ── AMBIENT GLOW UTILITIES ── */
 .glow-emerald {
-  box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.28);
 }
 
-.glow-teal {
-  box-shadow: 0 0 35px -5px rgba(20, 184, 166, 0.25);
+.glow-harvest {
+  box-shadow: 0 0 35px -5px rgba(180, 140, 20, 0.28);
 }
 
-/* Gradient text accents */
+.glow-earth {
+  box-shadow: 0 0 24px -4px rgba(120, 60, 10, 0.20);
+}
+
+/* ── LEAF ACCENT DECORATORS ── */
+.leaf-accent::before {
+  content: '🌿';
+  font-size: 12px;
+  opacity: 0.65;
+  margin-right: 5px;
+}
+
+/* ── GRADIENT TEXT UTILITIES ── */
+.gradient-text-crop {
+  background: linear-gradient(135deg, #86efac 0%, #4ade80 40%, #a3e635 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-harvest {
+  background: linear-gradient(135deg, #fde68a 0%, #fbbf24 50%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .gradient-text-brand {
   background: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #14b8a6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .gradient-text-gold {
   background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* Pulse animation */
+/* ── NATURE SCROLLBAR ── */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(6, 14, 4, 0.80);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(60, 100, 20, 0.55);
+  border-radius: 8px;
+  border: 1px solid rgba(101, 163, 28, 0.15);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(101, 163, 28, 0.75);
+}
+
+/* ── SIDEBAR NATURE TREE ── */
+.nature-sidebar {
+  background: linear-gradient(
+    180deg,
+    rgba(6, 16, 4, 0.97) 0%,
+    rgba(7, 20, 5, 0.97) 60%,
+    rgba(10, 18, 4, 0.97) 100%
+  );
+  border-right: 1px solid rgba(101, 163, 28, 0.14);
+  box-shadow: 4px 0 28px rgba(0, 0, 0, 0.45);
+}
+
+.nature-nav-item {
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  color: rgba(180, 210, 140, 0.70);
+}
+
+.nature-nav-item:hover {
+  background: rgba(34, 90, 14, 0.22);
+  color: #d9f99d;
+  border-color: rgba(101, 163, 28, 0.22);
+}
+
+.nature-nav-item.active {
+  background: linear-gradient(135deg, rgba(34, 90, 14, 0.38), rgba(16, 60, 8, 0.42));
+  color: #a3e635;
+  border-left: 3px solid #a3e635;
+  box-shadow: inset 0 0 16px rgba(101, 163, 28, 0.08);
+}
+
+/* ── NATURAL ANIMATIONS ── */
 @keyframes pulseGlow {
-  0%, 100% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.08); opacity: 1; }
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50%       { transform: scale(1.06); opacity: 1; }
+}
+
+@keyframes swayLeaf {
+  0%, 100% { transform: rotate(-2deg); }
+  50%       { transform: rotate(2deg); }
+}
+
+@keyframes dewDrop {
+  0%   { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(6px); opacity: 0; }
+}
+
+@keyframes sunrisePulse {
+  0%, 100% { box-shadow: 0 0 40px 10px rgba(251, 191, 36, 0.15); }
+  50%       { box-shadow: 0 0 60px 20px rgba(251, 191, 36, 0.28); }
 }
 
 .pulse-glow {
   animation: pulseGlow 4s ease-in-out infinite;
+}
+
+.sway-leaf {
+  animation: swayLeaf 4s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.sunrise-pulse {
+  animation: sunrisePulse 3s ease-in-out infinite;
+}
+
+/* ── FIELD ROW SECTION SEPARATORS ── */
+.field-section {
+  position: relative;
+}
+
+.field-section::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 5%;
+  right: 5%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(101, 163, 28, 0.20) 20%,
+    rgba(251, 191, 36, 0.12) 50%,
+    rgba(101, 163, 28, 0.20) 80%,
+    transparent
+  );
+}
+
+/* ── STAT / METRIC CARDS ── */
+.nature-stat {
+  background: linear-gradient(145deg, rgba(10, 28, 6, 0.92), rgba(8, 22, 4, 0.96));
+  border: 1px solid rgba(101, 163, 28, 0.18);
+  border-radius: 16px;
+  padding: 14px 16px;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.2s ease;
+}
+
+.nature-stat:hover {
+  border-color: rgba(163, 230, 53, 0.32);
+}
+
+.nature-stat strong {
+  color: #f0ede6;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.nature-stat span {
+  color: rgba(163, 200, 100, 0.68);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+}
+
+/* ── INPUT FIELDS ── */
+input[type="text"],
+input[type="search"],
+select {
+  background: rgba(8, 22, 5, 0.85) !important;
+  border-color: rgba(101, 163, 28, 0.22) !important;
+  color: #e8f5d0 !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="search"]:focus,
+select:focus {
+  border-color: rgba(163, 230, 53, 0.55) !important;
+  box-shadow: 0 0 0 3px rgba(101, 163, 28, 0.12) !important;
+  outline: none;
+}
+
+input::placeholder {
+  color: rgba(120, 160, 80, 0.45) !important;
+}
+
+/* ── FARM HERO SECTION ── */
+.farm-hero-visual {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: min(42%, 420px);
+  min-width: 240px;
+  overflow: hidden;
+  opacity: 0.55;
+  pointer-events: none;
+  mask-image: linear-gradient(to right, transparent, black 35%);
+}
+
+.farm-hero-sun {
+  position: absolute;
+  top: 18%;
+  right: 20%;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  color: rgba(253, 224, 71, 0.90);
+  border: 1px solid rgba(253, 224, 71, 0.30);
+  border-radius: 50%;
+  box-shadow: 0 0 0 16px rgba(253, 224, 71, 0.04), 0 0 60px rgba(245, 158, 11, 0.25);
+  animation: sunrisePulse 4s ease-in-out infinite;
+}
+
+.farm-hero-horizon {
+  position: absolute;
+  right: -10%;
+  bottom: 24%;
+  width: 130%;
+  height: 35%;
+  border-radius: 50% 50% 0 0 / 32% 32% 0 0;
+  background: linear-gradient(180deg, rgba(22, 101, 52, 0.35), rgba(100, 45, 10, 0.18));
+  transform: rotate(3deg);
+}
+
+.farm-hero-rows {
+  position: absolute;
+  right: -10%;
+  bottom: -18%;
+  width: 125%;
+  height: 58%;
+  transform: perspective(280px) rotateX(58deg) rotateZ(-5deg);
+  background: repeating-linear-gradient(90deg, transparent 0 32px, rgba(163, 230, 53, 0.18) 33px 35px, transparent 36px 66px);
+}
+
+.farm-hero-label {
+  position: absolute;
+  right: 20px;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  color: rgba(217, 249, 157, 0.90);
+  background: rgba(5, 18, 4, 0.70);
+  border: 1px solid rgba(163, 230, 53, 0.22);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+/* ── LOGIN PAGE ── */
+.farm-login {
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(4, 14, 3, 0.30), rgba(6, 18, 4, 0.75)),
+    radial-gradient(ellipse at 50% 108%, rgba(180, 100, 10, 0.22), transparent 46%);
+}
+
+.farm-login__sun {
+  position: absolute;
+  top: 10%;
+  right: 12%;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  color: rgba(253, 224, 71, 0.92);
+  border: 1px solid rgba(253, 224, 71, 0.30);
+  border-radius: 50%;
+  box-shadow: 0 0 0 20px rgba(253, 224, 71, 0.03), 0 0 90px rgba(245, 158, 11, 0.22);
+  animation: sunrisePulse 3.5s ease-in-out infinite;
+}
+
+.farm-login__field {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.farm-login__hill {
+  position: absolute;
+  left: -8%;
+  right: -8%;
+  bottom: -20%;
+  height: 54%;
+  border-radius: 50% 50% 0 0 / 28% 28% 0 0;
+}
+
+.farm-login__hill--back {
+  bottom: 6%;
+  background: rgba(20, 80, 18, 0.18);
+  transform: rotate(-3deg);
+}
+
+.farm-login__hill--front {
+  background: linear-gradient(180deg, rgba(22, 90, 22, 0.28), rgba(100, 45, 10, 0.22));
+  transform: rotate(2deg);
+}
+
+.farm-login__rows {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: -8%;
+  height: 50%;
+  opacity: 0.45;
+  transform: perspective(420px) rotateX(58deg) rotateZ(-2deg);
+  background: repeating-linear-gradient(90deg, transparent 0 46px, rgba(163, 230, 53, 0.20) 47px 49px, transparent 50px 94px);
+  mask-image: linear-gradient(to top, black, transparent 92%);
+}
+
+.farm-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 13px;
+  background: rgba(6, 18, 4, 0.42);
+  border: 1px solid rgba(163, 230, 53, 0.13);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+}
+
+.farm-stat strong { color: #f0ede6; font-size: 1.06rem; font-weight: 800; }
+.farm-stat span   { color: rgba(180, 210, 130, 0.68); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.10em; }
+
+/* ── NATURE DATA TABLE ── */
+.nature-table th {
+  background: rgba(10, 28, 6, 0.75);
+  color: rgba(163, 210, 90, 0.85);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid rgba(101, 163, 28, 0.20);
+}
+
+.nature-table tr:hover td {
+  background: rgba(20, 50, 10, 0.30);
+}
+
+/* ── TOOLTIP ── */
+.nature-tooltip {
+  background: rgba(6, 18, 4, 0.96);
+  border: 1px solid rgba(101, 163, 28, 0.30);
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(16px);
+  color: #d9f99d;
+  font-size: 12px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1023px) {
+  .farm-login__sun {
+    top: 6%;
+    right: 8%;
+    transform: scale(0.7);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::after, .farm-login__sun, .farm-hero-sun {
+    animation: none;
+  }
+}
+
+/* ── SELECTION ── */
+::selection {
+  background: rgba(101, 163, 28, 0.35);
+  color: #f0ffe0;
 }
