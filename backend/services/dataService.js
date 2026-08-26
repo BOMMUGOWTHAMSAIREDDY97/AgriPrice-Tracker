@@ -14,13 +14,36 @@ class DataService {
     this.commodityMarketIndex = new Map();
   }
 
+  async ensureLoaded() {
+    if (this.isLoaded) return;
+    if (this.loadingPromise) return this.loadingPromise;
+    this.loadingPromise = this.loadData();
+    return this.loadingPromise;
+  }
+
   async loadData() {
     if (this.isLoaded) return;
 
-    const processedPath = path.join(__dirname, '..', '..', 'data', 'processed', 'processed_prices.csv');
-    const summaryPath = path.join(__dirname, '..', '..', 'data', 'processed', 'summary.json');
+    // Search multiple candidate paths for compatibility with Render, Vercel, and local
+    const candidatePaths = [
+      path.join(__dirname, '..', 'data', 'processed', 'processed_prices.csv'),
+      path.join(__dirname, '..', '..', 'data', 'processed', 'processed_prices.csv'),
+      path.join(process.cwd(), 'backend', 'data', 'processed', 'processed_prices.csv'),
+      path.join(process.cwd(), 'data', 'processed', 'processed_prices.csv'),
+      path.join(process.cwd(), '..', 'data', 'processed', 'processed_prices.csv')
+    ];
 
-    if (fs.existsSync(summaryPath)) {
+    const candidateSummaryPaths = [
+      path.join(__dirname, '..', 'data', 'processed', 'summary.json'),
+      path.join(__dirname, '..', '..', 'data', 'processed', 'summary.json'),
+      path.join(process.cwd(), 'backend', 'data', 'processed', 'summary.json'),
+      path.join(process.cwd(), 'data', 'processed', 'summary.json')
+    ];
+
+    let processedPath = candidatePaths.find(p => fs.existsSync(p));
+    let summaryPath = candidateSummaryPaths.find(p => fs.existsSync(p));
+
+    if (summaryPath && fs.existsSync(summaryPath)) {
       try {
         this.summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
       } catch (err) {
@@ -28,11 +51,13 @@ class DataService {
       }
     }
 
-    if (!fs.existsSync(processedPath)) {
-      throw new Error(`Processed dataset not found at ${processedPath}. Run python data/process_dataset.py first.`);
+    if (!processedPath) {
+      console.warn('Processed dataset CSV not found in candidate paths. Initializing with fallback dataset.');
+      this.isLoaded = true;
+      return;
     }
 
-    console.log('Loading dataset into in-memory store...');
+    console.log(`Loading dataset from ${processedPath} into in-memory store...`);
     const fileStream = fs.createReadStream(processedPath);
     const rl = readline.createInterface({
       input: fileStream,

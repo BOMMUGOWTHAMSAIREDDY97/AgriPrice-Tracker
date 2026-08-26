@@ -1,6 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/priceController');
+const dataService = require('../services/dataService');
+
+// Middleware to ensure dataset is loaded during serverless execution
+router.use(async (req, res, next) => {
+  try {
+    await dataService.ensureLoaded();
+  } catch (err) {
+    console.error('Error ensuring dataService is loaded:', err);
+  }
+  next();
+});
 
 // Health check
 router.get('/health', controller.getHealth);
