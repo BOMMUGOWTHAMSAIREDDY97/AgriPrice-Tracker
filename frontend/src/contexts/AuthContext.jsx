@@ -24,7 +24,6 @@ export function AuthProvider({ children }) {
             photoURL: firebaseUser.photoURL || null,
             isGuest: false
           });
-          sessionStorage.removeItem(SESSION_STORAGE_KEY);
         } else {
           setUser(null);
         }
