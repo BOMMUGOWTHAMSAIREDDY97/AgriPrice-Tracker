@@ -17,55 +17,60 @@ class MLBridge {
 
     return new Promise((resolve) => {
       const scriptPath = path.join(__dirname, '..', '..', 'ml', 'forecast.py');
-      const pythonProcess = spawn('python', [
-        scriptPath,
-        '--commodity', commodity,
-        '--market', market,
-        '--horizon', String(horizon)
-      ]);
 
-      let stdoutData = '';
-      let stderrData = '';
+      // Try 'python' first (Windows), fall back to 'python3' (Linux/Render)
+      const trySpawn = (pythonCmd) => {
+        const pythonProcess = spawn(pythonCmd, [
+          scriptPath,
+          '--commodity', commodity,
+          '--market', market,
+          '--horizon', String(horizon)
+        ]);
 
-      pythonProcess.stdout.on('data', (data) => {
-        stdoutData += data.toString();
-      });
+        let stdoutData = '';
+        let stderrData = '';
 
-      pythonProcess.stderr.on('data', (data) => {
-        stderrData += data.toString();
-      });
+        pythonProcess.stdout.on('data', (data) => {
+          stdoutData += data.toString();
+        });
 
-      pythonProcess.on('close', (code) => {
-        if (code !== 0) {
-          console.error(`ML script exited with code ${code}:`, stderrData);
-          const fallbackResult = this.generateFallbackForecast(commodity, market, horizon);
-          return resolve(fallbackResult);
-        }
+        pythonProcess.stderr.on('data', (data) => {
+          stderrData += data.toString();
+        });
 
-        try {
-          const result = JSON.parse(stdoutData.trim());
-          if (result && result.status === 'success') {
-            this.cache.set(cacheKey, {
-              data: result,
-              timestamp: Date.now()
-            });
-            return resolve(result);
-          } else {
+        pythonProcess.on('close', (code) => {
+          if (code !== 0) {
+            console.error(`ML script (${pythonCmd}) exited with code ${code}:`, stderrData);
             const fallbackResult = this.generateFallbackForecast(commodity, market, horizon);
             return resolve(fallbackResult);
           }
-        } catch (err) {
-          console.error('Error parsing ML forecast JSON:', err, stdoutData);
-          const fallbackResult = this.generateFallbackForecast(commodity, market, horizon);
-          resolve(fallbackResult);
-        }
-      });
 
-      pythonProcess.on('error', (err) => {
-        console.error('Failed to spawn Python ML process:', err);
-        const fallbackResult = this.generateFallbackForecast(commodity, market, horizon);
-        resolve(fallbackResult);
-      });
+          try {
+            const result = JSON.parse(stdoutData.trim());
+            if (result && result.status === 'success') {
+              this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+              return resolve(result);
+            } else {
+              return resolve(this.generateFallbackForecast(commodity, market, horizon));
+            }
+          } catch (err) {
+            console.error('Error parsing ML forecast JSON:', err, stdoutData);
+            resolve(this.generateFallbackForecast(commodity, market, horizon));
+          }
+        });
+
+        pythonProcess.on('error', (err) => {
+          if (pythonCmd === 'python') {
+            console.warn('"python" not found, retrying with "python3"...');
+            trySpawn('python3');
+          } else {
+            console.error('Failed to spawn Python ML process:', err);
+            resolve(this.generateFallbackForecast(commodity, market, horizon));
+          }
+        });
+      };
+
+      trySpawn('python');
     });
   }
 

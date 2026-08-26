@@ -35,6 +35,7 @@ router.get('/gemini/tts-audio', controller.getTTSAudio);
 
 // Data.gov.in Live Agmarknet Sync
 router.post('/sync-data-gov', controller.syncDataGov);
+router.get('/data-gov-info', controller.getDataGovInfo);
 
 module.exports = router;
 

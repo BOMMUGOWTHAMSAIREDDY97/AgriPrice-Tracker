@@ -9,6 +9,7 @@ import ForecastPage from './pages/ForecastPage';
 import InsightsPage from './pages/InsightsPage';
 import AlertsPage from './pages/AlertsPage';
 import LoginPage from './pages/LoginPage';
+import { MapPin, Sprout, Waves } from 'lucide-react';
 
 function AppShell() {
   const { user } = useAuth();
@@ -39,6 +40,15 @@ function AppShell() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden relative">
+
+        <div className="field-operations-bar" aria-label="Field operations status">
+          <div className="field-operations-inner">
+            <span className="field-operations-title"><Sprout className="w-3.5 h-3.5" /> Field operations</span>
+            <span className="field-operations-item"><span className="field-status-dot" /> Mandi network online</span>
+            <span className="field-operations-item"><MapPin className="w-3.5 h-3.5" /> 31 states covered</span>
+            <span className="field-operations-item"><Waves className="w-3.5 h-3.5" /> Daily prices synced</span>
+          </div>
+        </div>
 
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <Routes>

@@ -12,5 +12,24 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core — always cached together
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // Firebase — large SDK, change rarely
+          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          // Recharts — heavy charting lib, separate cache bucket
+          'vendor-recharts': ['recharts'],
+          // Lucide icons — tree-shaken but still sizeable
+          'vendor-lucide': ['lucide-react']
+        }
+      }
+    },
+    // Raise the size warning threshold slightly (default 500kb → 800kb)
+    chunkSizeWarningLimit: 800
   }
 });
+

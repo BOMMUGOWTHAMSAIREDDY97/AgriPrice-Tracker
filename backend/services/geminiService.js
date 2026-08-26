@@ -3,7 +3,7 @@ require('dotenv').config();
 class GeminiService {
   constructor() {
     this.apiKey = process.env.GEMINI_API_KEY || '';
-    this.model = 'gemini-3.7-flash';
+    this.model = 'gemini-1.5-flash';
     this.cache = new Map();
     this.cacheTTL = 30 * 60 * 1000; // 30 min cache (conserve quota)
   }
@@ -168,10 +168,17 @@ Provide concise, courteous, and actionable insights in INR (₹/quintal or ₹/k
       };
     } catch (err) {
       console.error('Gemini chat error:', err.message);
+      const isQuotaError = err.message.includes('429') || err.message.includes('quota') || err.message.includes('RESOURCE_EXHAUSTED');
+      const commodity = context.commodity || 'selected crop';
+      const market = context.market || 'selected mandi';
+      const currentPrice = context.currentPrice || 'the current modal price';
+      const forecastPrice = context.forecastPrice || 'the forecast target';
+
       return {
-        status: 'error',
-        reply: "I'm having trouble connecting to Gemini AI right now. Please check your network or try again in a moment.",
-        error: err.message
+        status: 'fallback',
+        reply: isQuotaError
+          ? `Mandi AI is temporarily using local market guidance because the Gemini daily limit has been reached. For ${commodity} in ${market}, compare the current modal price of ₹${currentPrice}/quintal with the forecast target of ₹${forecastPrice}/quintal, sell in batches, and watch fresh arrivals before committing your full stock.`
+          : `Mandi AI is temporarily unavailable. For ${commodity} in ${market}, review the current modal price of ₹${currentPrice}/quintal against the forecast target of ₹${forecastPrice}/quintal, then use phased selling and monitor local arrivals.`
       };
     }
   }

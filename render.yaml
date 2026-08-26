@@ -10,3 +10,7 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: NODE_VERSION
+        value: 20.11.0
+      - key: GEMINI_API_KEY
+        sync: false  # Set this in Render Dashboard > Environment

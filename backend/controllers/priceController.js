@@ -149,6 +149,19 @@ exports.syncDataGov = async (req, res) => {
   }
 };
 
+exports.getDataGovInfo = async (req, res) => {
+  try {
+    res.json({
+      resource_id: '9ef84268-d588-465a-a308-a864a43d0070',
+      title: 'Current Daily Price and Arrival of Agricultural Commodities in Mandis',
+      source: 'data.gov.in',
+      api_base: 'https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.getGeminiAdvisory = async (req, res) => {
   try {
     const geminiService = require('../services/geminiService');
