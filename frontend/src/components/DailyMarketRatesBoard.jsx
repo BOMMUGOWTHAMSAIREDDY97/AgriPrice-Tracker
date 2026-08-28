@@ -16,14 +16,16 @@ import {
 import { fetchLiveRates } from '../services/api';
 import { CATEGORY_ICONS, getCommodityCategory } from '../utils/commodityCategories';
 
+// These keys MUST exactly match the `category` string assigned in backend/services/dataService.js
 const CATEGORY_FILTERS = [
-  { key: 'All', label: 'All Crops', icon: '🌱' },
-  { key: 'Vegetables', label: 'Vegetables', icon: '🥦' },
-  { key: 'Spices', label: 'Spices', icon: '🌶️' },
-  { key: 'Millets & Cereals', label: 'Millets & Grains', icon: '🌾' },
-  { key: 'Pulses & Legumes', label: 'Pulses & Dal', icon: '🫘' },
-  { key: 'Fruits', label: 'Fruits', icon: '🍎' },
-  { key: 'Oilseeds & Cash Crops', label: 'Cash Crops', icon: '🌻' }
+  { key: 'All',                    label: 'All Crops',       icon: '🌱' },
+  { key: 'Vegetables',             label: 'Vegetables',      icon: '🥦' },
+  { key: 'Spices',                 label: 'Spices',          icon: '🌶️' },
+  { key: 'Millets & Cereals',      label: 'Millets & Grains',icon: '🌾' },
+  { key: 'Pulses & Legumes',       label: 'Pulses & Dal',    icon: '🫘' },
+  { key: 'Fruits',                 label: 'Fruits',          icon: '🍎' },
+  { key: 'Oilseeds & Cash Crops',  label: 'Cash Crops',      icon: '🌻' },
+  { key: 'Other',                  label: 'Other',           icon: '🌿' }
 ];
 
 const PAGE_SIZE = 60;
