@@ -26,6 +26,13 @@ import DecisionBadge from '../components/DecisionBadge';
 import ProfitSimulator from '../components/ProfitSimulator';
 import { fetchCommodities, fetchMarkets, fetchForecast } from '../services/api';
 
+import { 
+  COMMODITY_CATEGORIES, 
+  CATEGORY_ICONS, 
+  CATEGORY_COLORS, 
+  getCommodityCategory 
+} from '../utils/commodityCategories';
+
 const formatDate = (value, options) => {
   if (!value) return 'Unknown date';
   const date = new Date(value);
@@ -196,13 +203,27 @@ export default function ForecastPage() {
           <div className="flex flex-wrap items-center gap-3 bg-slate-800/80 p-2.5 rounded-2xl border border-slate-700">
             {/* Commodity */}
             <div>
-              <span className="block text-[10px] uppercase font-bold text-slate-400 pl-1 mb-0.5">Crop</span>
+              <span className="block text-[10px] uppercase font-bold text-slate-400 pl-1 mb-0.5">
+                Crop ({getCommodityCategory(commodity)})
+              </span>
               <select
                 value={commodity}
                 onChange={(e) => setCommodity(e.target.value)}
-                className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs sm:text-sm font-bold text-white outline-none focus:ring-2 focus:ring-brand-500"
+                className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs sm:text-sm font-bold text-white outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
-                {commodities.map(c => <option key={c} value={c}>{c}</option>)}
+                {Object.entries(COMMODITY_CATEGORIES).map(([catName, list]) => {
+                  const available = list.filter(c => commodities.includes(c));
+                  if (available.length === 0) return null;
+                  return (
+                    <optgroup key={catName} label={`${CATEGORY_ICONS[catName]} ${catName} (${available.length})`} className="bg-slate-950 font-bold text-emerald-400">
+                      {available.map(c => (
+                        <option key={c} value={c} className="bg-slate-900 text-white font-normal">
+                          {c}
+                        </option>
+                      ))}
+                    </optgroup>
+                  );
+                })}
               </select>
             </div>
 
@@ -212,7 +233,7 @@ export default function ForecastPage() {
               <select
                 value={market}
                 onChange={(e) => setMarket(e.target.value)}
-                className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs sm:text-sm font-bold text-white outline-none focus:ring-2 focus:ring-brand-500 max-w-[150px] sm:max-w-[200px] truncate"
+                className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs sm:text-sm font-bold text-white outline-none focus:ring-2 focus:ring-emerald-500 max-w-[150px] sm:max-w-[200px] truncate cursor-pointer"
               >
                 {markets.map(m => <option key={m} value={m}>{m}</option>)}
               </select>

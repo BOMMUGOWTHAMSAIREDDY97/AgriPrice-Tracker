@@ -10,9 +10,23 @@ export async function fetchHealth() {
   }
 }
 
-export async function fetchCommodities() {
+export async function fetchCategories() {
   try {
-    const res = await fetch(`${API_BASE}/commodities`);
+    const res = await fetch(`${API_BASE}/categories`);
+    const data = await res.json();
+    return data.categories || {};
+  } catch (err) {
+    console.error('fetchCategories error:', err);
+    return {};
+  }
+}
+
+export async function fetchCommodities(category = '') {
+  try {
+    const url = category && category !== 'All' 
+      ? `${API_BASE}/commodities?category=${encodeURIComponent(category)}`
+      : `${API_BASE}/commodities`;
+    const res = await fetch(url);
     const data = await res.json();
     return data.commodities || [];
   } catch (err) {

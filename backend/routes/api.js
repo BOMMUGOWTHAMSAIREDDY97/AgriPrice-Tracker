@@ -17,6 +17,7 @@ router.use(async (req, res, next) => {
 router.get('/health', controller.getHealth);
 
 // Metadata lookups
+router.get('/categories', controller.getCategories);
 router.get('/commodities', controller.getCommodities);
 router.get('/states', controller.getStates);
 router.get('/markets', controller.getMarkets);

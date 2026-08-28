@@ -13,6 +13,13 @@ import {
 import MarketComparisonChart from '../components/MarketComparisonChart';
 import { fetchCommodities, fetchMarketComparison } from '../services/api';
 
+import { 
+  COMMODITY_CATEGORIES, 
+  CATEGORY_ICONS, 
+  CATEGORY_COLORS, 
+  getCommodityCategory 
+} from '../utils/commodityCategories';
+
 export default function MarketComparison() {
   const [commodities, setCommodities] = useState([]);
   const [selectedCommodity, setSelectedCommodity] = useState('Tomato');
@@ -51,15 +58,16 @@ export default function MarketComparison() {
   }, [selectedCommodity]);
 
   const { markets = [], highest_market, lowest_market, average_price = 0, dynamic_insight } = comparisonData;
+  const currentCategory = getCommodityCategory(selectedCommodity);
 
   return (
     <div className="space-y-6 pb-12">
       
       {/* Header */}
-      <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950">
+      <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 shadow-2xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/15 border border-brand-500/30 text-xs font-semibold text-brand-400 mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-xs font-semibold text-emerald-400 mb-2">
               <Activity className="w-3.5 h-3.5" />
               <span>Inter-Mandi Arbitrage Matrix</span>
             </div>
@@ -67,23 +75,33 @@ export default function MarketComparison() {
               Market Price Comparison
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-              Compare mandi prices across states to identify optimal selling hubs and capture inter-market arbitrage.
+              Compare mandi prices across states to identify optimal selling hubs and capture inter-market arbitrage across all 123 crops.
             </p>
           </div>
 
           {/* Commodity Selector Dropdown */}
-          <div className="flex items-center gap-2 bg-slate-800/80 p-2 rounded-2xl border border-slate-700">
-            <span className="text-xs font-bold text-slate-400 pl-2">Select Crop:</span>
+          <div className="flex items-center gap-2.5 bg-slate-800/90 p-2.5 rounded-2xl border border-slate-700 shadow-md">
+            <span className={`text-[11px] font-bold px-2 py-1 rounded-lg border ${CATEGORY_COLORS[currentCategory]}`}>
+              {CATEGORY_ICONS[currentCategory]} {currentCategory}
+            </span>
             <select
               value={selectedCommodity}
               onChange={(e) => setSelectedCommodity(e.target.value)}
-              className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+              className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
             >
-              {commodities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
+              {Object.entries(COMMODITY_CATEGORIES).map(([catName, list]) => {
+                const available = list.filter(c => commodities.includes(c));
+                if (available.length === 0) return null;
+                return (
+                  <optgroup key={catName} label={`${CATEGORY_ICONS[catName]} ${catName} (${available.length})`} className="bg-slate-950 font-bold text-emerald-400">
+                    {available.map(c => (
+                      <option key={c} value={c} className="bg-slate-900 text-white font-normal">
+                        {c}
+                      </option>
+                    ))}
+                  </optgroup>
+                );
+              })}
             </select>
           </div>
         </div>

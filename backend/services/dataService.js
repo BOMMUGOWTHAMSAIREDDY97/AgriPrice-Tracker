@@ -126,6 +126,54 @@ class DataService {
 
     console.log(`Aligning mandi timeline: Dataset latest date ${maxDateStr} shifted by +${dayOffset} days to today (${today.toISOString().split('T')[0]})`);
 
+    const COMMODITY_CATEGORIES = {
+      'Vegetables': [
+        'Amaranthus', 'Amphophalus', 'Ashgourd', 'Beans', 'Beetroot', 'Bhindi(Ladies Finger)', 
+        'Bitter Gourd', 'Bottle Gourd', 'Brinjal', 'Cabbage', 'Capsicum', 'Carrot', 'Cauliflower', 
+        'Cluster Beans', 'Colacasia', 'Cowpea(Veg)', 'Cucumbar(Kheera)', 'Drumstick', 
+        'Elephant Yam (Suran)', 'French Beans (Frasbean)', 'Green Peas', 'Indian Beans (Seam)', 
+        'Kartali (Kantola)', 'Knool Khol', 'Leafy Vegetable', 'Little Gourd (Kundru)', 
+        'Long Melon(Kakri)', 'Mashrooms', 'Mint(Pudina)', 'Onion', 'Peas Wet', 
+        'Pointed Gourd (Parval)', 'Potato', 'Pumpkin', 'Raddish', 'Ridgeguard(Tori)', 
+        'Snakeguard', 'Spinach', 'Sponge Gourd', 'Squash(Chappal Kadoo)', 'Sweet Potato', 
+        'Sweet Pumpkin', 'Tapioca', 'Tinda', 'Tomato', 'Yam (Ratalu)'
+      ],
+      'Spices': [
+        'Ajwan', 'Black Pepper', 'Coriander(Leaves)', 'Cummin Seed(Jeera)', 'Dry Chillies', 
+        'Garlic', 'Ginger(Dry)', 'Ginger(Green)', 'Green Chilli', 'Methi Seeds', 'Mustard', 
+        'Soanf', 'Suva (Dill Seed)'
+      ],
+      'Millets & Cereals': [
+        'Bajra(Pearl Millet/Cumbu)', 'Jowar(Sorghum)', 'Maize', 'Paddy(Dhan)(Basmati)', 
+        'Paddy(Dhan)(Common)', 'Rice', 'Wheat'
+      ],
+      'Pulses & Legumes': [
+        'Arhar (Tur/Red Gram)(Whole)', 'Arhar Dal(Tur Dal)', 'Bengal Gram(Gram)(Whole)', 
+        'Black Gram (Urd Beans)(Whole)', 'Cowpea (Lobia/Karamani)', 'Field Pea', 'Green Avare (W)', 
+        'Green Gram (Moong)(Whole)', 'Green Gram Dal (Moong Dal)', 'Kabuli Chana(Chickpeas-White)', 
+        'Kulthi(Horse Gram)', 'Lentil (Masur)(Whole)', 'Masur Dal', 'Peas(Dry)', 'Pegeon Pea (Arhar Fali)'
+      ],
+      'Fruits': [
+        'Apple', 'Apricot(Jardalu/Khumani)', 'Banana', 'Banana - Green', 'Cherry', 'Chikoos(Sapota)', 
+        'Grapes', 'Guava', 'Jack Fruit', 'Karbuja(Musk Melon)', 'Lemon', 'Lime', 'Mango', 
+        'Mango (Raw-Ripe)', 'Mousambi(Sweet Lime)', 'Orange', 'Papaya', 'Peach', 'Pineapple', 
+        'Plum', 'Pomegranate', 'Water Melon'
+      ],
+      'Oilseeds & Cash Crops': [
+        'Castor Seed', 'Coconut Oil', 'Coconut Seed', 'Cotton', 'Firewood', 'Fish', 'Groundnut', 
+        'Groundnut Pods (Raw)', 'Guar', 'Guar Seed(Cluster Beans Seed)', 'Gur(Jaggery)', 
+        'Isabgul (Psyllium)', 'Jute', 'Linseed', 'Mustard Oil', 'Pigs', 
+        'Sesamum(Sesame,Gingelly,Til)', 'Soyabean', 'Tender Coconut', 'Wood'
+      ]
+    };
+
+    const commToCategory = {};
+    Object.entries(COMMODITY_CATEGORIES).forEach(([cat, list]) => {
+      list.forEach(c => { commToCategory[c.toLowerCase()] = cat; });
+    });
+
+    this.categoriesMap = COMMODITY_CATEGORIES;
+
     for (const record of rawList) {
       if (record.arrival_date && dayOffset > 0) {
         try {
@@ -136,6 +184,9 @@ class DataService {
           // keep original
         }
       }
+
+      // Assign rich category
+      record.category = commToCategory[record.commodity?.toLowerCase()] || 'Vegetables';
 
       this.records.push(record);
       if (record.commodity) commoditySet.add(record.commodity);
@@ -156,7 +207,7 @@ class DataService {
     this.districts = Array.from(districtSet).sort();
     this.isLoaded = true;
 
-    console.log(`Loaded ${this.records.length} records. ${this.commodities.length} commodities, ${this.markets.length} markets across ${this.states.length} states.`);
+    console.log(`Loaded ${this.records.length} records across 6 categories (Vegetables, Spices, Millets/Cereals, Pulses, Fruits, Oilseeds). ${this.commodities.length} commodities, ${this.markets.length} markets in ${this.states.length} states.`);
   }
 
   addRecords(newRecords = []) {
@@ -194,16 +245,36 @@ class DataService {
     return addedCount;
   }
 
-  getCommodities() {
-    return this.commodities;
+  getCommodities(category = '') {
+    if (!category || category === 'All') return this.commodities;
+    const catList = this.categoriesMap?.[category] || [];
+    const catSet = new Set(catList.map(c => c.toLowerCase()));
+    return this.commodities.filter(c => catSet.has(c.toLowerCase()));
+  }
+
+  getCategories() {
+    if (!this.categoriesMap) return {};
+    const result = {};
+    Object.entries(this.categoriesMap).forEach(([cat, list]) => {
+      const available = list.filter(c => this.commodities.includes(c));
+      result[cat] = {
+        name: cat,
+        count: available.length,
+        commodities: available
+      };
+    });
+    return result;
   }
 
   getStates() {
     return this.states;
   }
 
-  getMarkets({ commodity, state } = {}) {
+  getMarkets({ commodity, state, category } = {}) {
     let list = this.records;
+    if (category && category !== 'All') {
+      list = list.filter(r => r.category === category);
+    }
     if (commodity) {
       const commLower = commodity.toLowerCase();
       list = list.filter(r => r.commodity.toLowerCase() === commLower);
@@ -233,11 +304,13 @@ class DataService {
   }
 
   getPrices({
+    category,
     commodity,
     state,
     district,
     market,
     variety,
+    dateFilter,
     startDate,
     endDate,
     search,
@@ -247,6 +320,11 @@ class DataService {
     sortOrder = 'desc'
   }) {
     let filtered = this.records;
+
+    // Filter by crop category
+    if (category && category !== 'All') {
+      filtered = filtered.filter(r => r.category === category);
+    }
 
     if (commodity) {
       const c = commodity.toLowerCase();
@@ -268,6 +346,30 @@ class DataService {
       const v = variety.toLowerCase();
       filtered = filtered.filter(r => r.variety && r.variety.toLowerCase() === v);
     }
+
+    // Dynamic Daily Date Filters
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    if (dateFilter === 'today') {
+      filtered = filtered.filter(r => r.arrival_date === todayStr);
+    } else if (dateFilter === 'yesterday') {
+      const y = new Date(now);
+      y.setDate(y.getDate() - 1);
+      const yStr = y.toISOString().split('T')[0];
+      filtered = filtered.filter(r => r.arrival_date === yStr);
+    } else if (dateFilter === '7d') {
+      const d7 = new Date(now);
+      d7.setDate(d7.getDate() - 7);
+      const d7Str = d7.toISOString().split('T')[0];
+      filtered = filtered.filter(r => r.arrival_date >= d7Str);
+    } else if (dateFilter === '30d') {
+      const d30 = new Date(now);
+      d30.setDate(d30.getDate() - 30);
+      const d30Str = d30.toISOString().split('T')[0];
+      filtered = filtered.filter(r => r.arrival_date >= d30Str);
+    }
+
     if (startDate) {
       filtered = filtered.filter(r => r.arrival_date >= startDate);
     }
@@ -278,6 +380,7 @@ class DataService {
       const q = search.toLowerCase();
       filtered = filtered.filter(r =>
         r.commodity.toLowerCase().includes(q) ||
+        (r.category && r.category.toLowerCase().includes(q)) ||
         r.market.toLowerCase().includes(q) ||
         r.state.toLowerCase().includes(q) ||
         r.district.toLowerCase().includes(q) ||

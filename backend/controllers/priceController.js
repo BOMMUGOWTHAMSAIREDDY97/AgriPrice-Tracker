@@ -19,8 +19,18 @@ exports.getHealth = async (req, res) => {
 
 exports.getCommodities = async (req, res) => {
   try {
-    const list = dataService.getCommodities();
-    res.json({ commodities: list, total: list.length });
+    const { category } = req.query;
+    const list = dataService.getCommodities(category);
+    res.json({ commodities: list, total: list.length, category: category || 'All' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.getCategories = async (req, res) => {
+  try {
+    const categories = dataService.getCategories();
+    res.json({ categories, total: Object.keys(categories).length });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -37,8 +47,8 @@ exports.getStates = async (req, res) => {
 
 exports.getMarkets = async (req, res) => {
   try {
-    const { commodity, state } = req.query;
-    const list = dataService.getMarkets({ commodity, state });
+    const { commodity, state, category } = req.query;
+    const list = dataService.getMarkets({ commodity, state, category });
     res.json({ markets: list, total: list.length });
   } catch (error) {
     res.status(500).json({ error: error.message });
