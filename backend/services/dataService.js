@@ -826,7 +826,7 @@ class DataService {
       gainers_count: gainers.length,
       losers_count: losers.length,
       stable_count: stable.length,
-      rates: list.slice(0, parseInt(limit, 10) || 60),
+      rates: list.slice(0, Math.min(parseInt(limit, 10) || 60, list.length)),
       top_gainers: gainers.slice(0, 10),
       top_losers: losers.slice(0, 10),
       market_pulse: {
