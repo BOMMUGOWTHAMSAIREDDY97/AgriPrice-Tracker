@@ -140,6 +140,16 @@ exports.getInsights = async (req, res) => {
   }
 };
 
+exports.getLiveRates = async (req, res) => {
+  try {
+    const { category, limit, search } = req.query;
+    const result = dataService.getLiveMarketRates({ category, limit, search });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.getSummary = async (req, res) => {
   try {
     res.json(dataService.summary || {});

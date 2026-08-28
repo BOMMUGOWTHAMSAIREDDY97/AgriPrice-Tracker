@@ -38,6 +38,7 @@ router.post('/forecast', controller.getForecast);
 
 // Market Intelligence Insights
 router.get('/insights', controller.getInsights);
+router.get('/live-rates', controller.getLiveRates);
 
 // Google Gemini AI Advisory & Copilot
 router.post('/gemini/advisory', controller.getGeminiAdvisory);

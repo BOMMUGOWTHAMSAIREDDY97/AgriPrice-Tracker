@@ -23,6 +23,7 @@ import DecisionBadge from '../components/DecisionBadge';
 import ProfitSimulator from '../components/ProfitSimulator';
 import GeminiAdvisor from '../components/GeminiAdvisor';
 import FilterBar from '../components/FilterBar';
+import DailyMarketRatesBoard from '../components/DailyMarketRatesBoard';
 import { 
   fetchCommodities, 
   fetchStates, 
@@ -337,6 +338,15 @@ export default function Dashboard() {
         currentModalPrice={currentPrice}
         forecastModalPrice={forecastPrice}
         horizon={7}
+      />
+
+      {/* Daily Live Mandi Rates & Up/Down Price Movements Board */}
+      <DailyMarketRatesBoard
+        onSelectCommodity={(comm, mkt) => {
+          if (comm) setSelectedCommodity(comm);
+          if (mkt) setSelectedMarket(mkt);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       {/* Cross-Mandi Arbitrage Comparison Preview */}

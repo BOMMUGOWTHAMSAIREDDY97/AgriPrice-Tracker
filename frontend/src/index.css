@@ -698,3 +698,21 @@ input::placeholder {
   background: rgba(101, 163, 28, 0.35);
   color: #f0ffe0;
 }
+
+/* ── TICKER MARQUEE ANIMATION ── */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 70s linear infinite;
+}
+
+.animate-marquee:hover,
+.pause-animation {
+  animation-play-state: paused !important;
+}
+

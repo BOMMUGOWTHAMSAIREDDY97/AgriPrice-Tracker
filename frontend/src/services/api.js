@@ -134,6 +134,22 @@ export async function fetchForecast(commodity = 'Tomato', market = 'Rajkot(Veg.S
   }
 }
 
+export async function fetchLiveRates({ category = '', limit = 60, search = '' } = {}) {
+  try {
+    const query = new URLSearchParams();
+    if (category && category !== 'All') query.append('category', category);
+    if (limit) query.append('limit', limit);
+    if (search) query.append('search', search);
+    query.append('_ts', Date.now());
+
+    const res = await fetch(`${API_BASE}/live-rates?${query.toString()}`, { cache: 'no-store' });
+    return await res.json();
+  } catch (err) {
+    console.error('fetchLiveRates error:', err);
+    return { rates: [], top_gainers: [], top_losers: [], market_pulse: { avg_change_pct: 0, advances: 0, declines: 0 } };
+  }
+}
+
 export async function fetchPricesTable(params = {}) {
   try {
     const query = new URLSearchParams();

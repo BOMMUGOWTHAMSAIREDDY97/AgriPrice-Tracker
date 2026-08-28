@@ -11,6 +11,8 @@ import AlertsPage from './pages/AlertsPage';
 import LoginPage from './pages/LoginPage';
 import { MapPin, Sprout, Waves } from 'lucide-react';
 
+import LiveMarketTicker from './components/LiveMarketTicker';
+
 function AppShell() {
   const { user } = useAuth();
 
@@ -41,12 +43,15 @@ function AppShell() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden relative">
 
+        {/* Live Mandi Rate Ticker Ribbon */}
+        <LiveMarketTicker />
+
         <div className="field-operations-bar" aria-label="Field operations status">
           <div className="field-operations-inner">
             <span className="field-operations-title"><Sprout className="w-3.5 h-3.5" /> Field operations</span>
             <span className="field-operations-item"><span className="field-status-dot" /> Mandi network online</span>
             <span className="field-operations-item"><MapPin className="w-3.5 h-3.5" /> 31 states covered</span>
-            <span className="field-operations-item"><Waves className="w-3.5 h-3.5" /> Daily prices synced</span>
+            <span className="field-operations-item"><Waves className="w-3.5 h-3.5" /> Live Daily Prices</span>
           </div>
         </div>
 

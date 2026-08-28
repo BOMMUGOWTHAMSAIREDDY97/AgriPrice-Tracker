@@ -758,7 +758,87 @@ class DataService {
       generated_at: new Date().toISOString()
     };
   }
+
+  getLiveMarketRates({ category, limit = 60, search = '' } = {}) {
+    const list = [];
+    const searchLower = (search || '').toLowerCase();
+
+    for (const [key, records] of this.commodityMarketIndex.entries()) {
+      if (records.length >= 2) {
+        const sorted = [...records].sort((a, b) => b.arrival_date.localeCompare(a.arrival_date));
+        const latest = sorted[0];
+        const yesterday = sorted[1];
+        const past7 = sorted[Math.min(6, sorted.length - 1)];
+
+        if (category && category !== 'All' && latest.category !== category) {
+          continue;
+        }
+
+        if (searchLower) {
+          const match = 
+            latest.commodity.toLowerCase().includes(searchLower) ||
+            latest.market.toLowerCase().includes(searchLower) ||
+            latest.state.toLowerCase().includes(searchLower);
+          if (!match) continue;
+        }
+
+        const currentPrice = latest.modal_price;
+        const prevPrice = yesterday.modal_price;
+        const dayChangeVal = currentPrice - prevPrice;
+        const dayChangePct = prevPrice > 0 ? Math.round(((dayChangeVal) / prevPrice) * 1000) / 10 : 0;
+        
+        const price7d = past7.modal_price;
+        const weekChangePct = price7d > 0 ? Math.round(((currentPrice - price7d) / price7d) * 1000) / 10 : 0;
+
+        let direction = 'STABLE';
+        if (dayChangeVal > 0) direction = 'UP';
+        else if (dayChangeVal < 0) direction = 'DOWN';
+
+        list.push({
+          commodity: latest.commodity,
+          category: latest.category,
+          market: latest.market,
+          state: latest.state,
+          district: latest.district,
+          current_price: currentPrice,
+          price_per_kg: Math.round((currentPrice / 100) * 10) / 10,
+          yesterday_price: prevPrice,
+          day_change_val: Math.round(dayChangeVal),
+          day_change_pct: dayChangePct,
+          week_change_pct: weekChangePct,
+          direction,
+          min_price: latest.min_price,
+          max_price: latest.max_price,
+          arrival_date: latest.arrival_date
+        });
+      }
+    }
+
+    // Sort by absolute price change / activity
+    list.sort((a, b) => Math.abs(b.day_change_pct) - Math.abs(a.day_change_pct));
+
+    const gainers = [...list].filter(c => c.direction === 'UP').sort((a, b) => b.day_change_pct - a.day_change_pct);
+    const losers = [...list].filter(c => c.direction === 'DOWN').sort((a, b) => a.day_change_pct - b.day_change_pct);
+    const stable = [...list].filter(c => c.direction === 'STABLE');
+
+    return {
+      total_rates: list.length,
+      gainers_count: gainers.length,
+      losers_count: losers.length,
+      stable_count: stable.length,
+      rates: list.slice(0, parseInt(limit, 10) || 60),
+      top_gainers: gainers.slice(0, 10),
+      top_losers: losers.slice(0, 10),
+      market_pulse: {
+        avg_change_pct: list.length > 0 ? (list.reduce((acc, r) => acc + r.day_change_pct, 0) / list.length).toFixed(2) : 0,
+        advances: gainers.length,
+        declines: losers.length
+      },
+      generated_at: new Date().toISOString()
+    };
+  }
 }
 
 const instance = new DataService();
 module.exports = instance;
+
