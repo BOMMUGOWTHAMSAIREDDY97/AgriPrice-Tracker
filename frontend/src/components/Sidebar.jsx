@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import DataSyncModal from './DataSyncModal';
 import { 
   TrendingUp, 
   BarChart3, 
@@ -30,9 +29,9 @@ export default function Sidebar() {
   const [isOpenMobile, setIsOpenMobile] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showSyncModal, setShowSyncModal] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
+
 
   const navSections = [
     {
@@ -223,41 +222,6 @@ export default function Sidebar() {
             </div>
           )}
 
-          {/* Live Data Feed Status */}
-          {!isCollapsed ? (
-            <button
-              onClick={() => setShowSyncModal(true)}
-              className="w-full text-left p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/40 space-y-1.5 transition group"
-              title="Click to Open Live Daily Sync Hub"
-            >
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-slate-300 font-semibold group-hover:text-emerald-400">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                  <span>Daily Feed Live</span>
-                </div>
-                <RefreshCw className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-400 group-hover:rotate-180 transition-transform duration-300" />
-              </div>
-              <div className="text-[11px] text-slate-400 flex items-center justify-between">
-                <span>298,232 Records</span>
-                <span className="text-emerald-400 font-medium">Sync Data &rarr;</span>
-              </div>
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowSyncModal(true)}
-              className="w-full flex justify-center"
-              title="Live Daily Sync Hub"
-            >
-              <div className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-emerald-400 relative transition">
-                <Database className="w-4 h-4" />
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500"></span>
-              </div>
-            </button>
-          )}
-
           {/* User Profile Card */}
           <div className={`
             flex items-center gap-3 p-2 rounded-xl bg-slate-800/40 border border-slate-800 text-slate-200
@@ -288,7 +252,7 @@ export default function Sidebar() {
             {!isCollapsed && (
               <button
                 onClick={logout}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
                 title="Sign out"
               >
                 <LogOut className="w-4 h-4" />
@@ -298,13 +262,6 @@ export default function Sidebar() {
 
         </div>
       </aside>
-
-      {/* Live Data Sync Modal */}
-      <DataSyncModal
-        isOpen={showSyncModal}
-        onClose={() => setShowSyncModal(false)}
-        onSyncComplete={() => window.location.reload()}
-      />
     </>
   );
 }

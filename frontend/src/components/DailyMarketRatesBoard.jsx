@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -11,10 +11,13 @@ import {
   ChevronRight,
   LayoutGrid,
   Table2,
-  SlidersHorizontal
+  SlidersHorizontal,
+  MapPin,
+  RotateCcw,
+  Zap
 } from 'lucide-react';
 import { fetchLiveRates } from '../services/api';
-import { CATEGORY_ICONS, getCommodityCategory } from '../utils/commodityCategories';
+import { CATEGORY_ICONS, COMMODITY_CATEGORIES, getCommodityCategory } from '../utils/commodityCategories';
 
 // These keys MUST exactly match the `category` string assigned in backend/services/dataService.js
 const CATEGORY_FILTERS = [
@@ -30,10 +33,11 @@ const CATEGORY_FILTERS = [
 
 const PAGE_SIZE = 60;
 
-export default function DailyMarketRatesBoard({ onSelectCommodity }) {
+export default function DailyMarketRatesBoard({ onSelectCommodity, showCategoryFilters = true }) {
   const [allRates, setAllRates] = useState([]);
   const [marketPulse, setMarketPulse] = useState({});
   const [category, setCategory] = useState('All');
+  const [selectedState, setSelectedState] = useState('All');
   const [search, setSearch] = useState('');
   const [filterMode, setFilterMode] = useState('all'); // 'all', 'gainers', 'losers'
   const [sortBy, setSortBy] = useState('change'); // 'change', 'price', 'commodity'
@@ -63,60 +67,107 @@ export default function DailyMarketRatesBoard({ onSelectCommodity }) {
   // Reset to page 1 whenever filters change
   useEffect(() => {
     setPage(1);
-  }, [category, search, filterMode, sortBy]);
+  }, [category, selectedState, search, filterMode, sortBy]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
     loadData();
   };
 
-  // Filter pipeline (all client-side — no extra API call)
-  const filtered = allRates.filter(item => {
-    // Category filter
-    if (category !== 'All') {
-      const cat = item.category || getCommodityCategory(item.commodity);
-      if (cat !== category) return false;
-    }
-    // Mode filter
-    if (filterMode === 'gainers' && item.direction !== 'UP') return false;
-    if (filterMode === 'losers' && item.direction !== 'DOWN') return false;
-    // Search filter
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      return (
-        item.commodity.toLowerCase().includes(q) ||
-        item.market.toLowerCase().includes(q) ||
-        item.state.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  const handleResetFilters = () => {
+    setCategory('All');
+    setSelectedState('All');
+    setSearch('');
+    setFilterMode('all');
+    setSortBy('change');
+    setPage(1);
+  };
+
+  // Available unique states from loaded rates
+  const availableStates = useMemo(() => {
+    const set = new Set();
+    allRates.forEach(r => {
+      if (r.state) set.add(r.state);
+    });
+    return Array.from(set).sort();
+  }, [allRates]);
+
+  // Unique commodities count across categories
+  const categoryStats = useMemo(() => {
+    const stats = {};
+    CATEGORY_FILTERS.forEach(tab => {
+      if (tab.key === 'All') {
+        const uniqueComms = new Set(allRates.map(r => r.commodity.toLowerCase().trim()));
+        stats['All'] = {
+          quotes: allRates.length,
+          crops: uniqueComms.size || 123
+        };
+      } else {
+        const ratesInCat = allRates.filter(r => (r.category || getCommodityCategory(r.commodity)) === tab.key);
+        const uniqueComms = new Set(ratesInCat.map(r => r.commodity.toLowerCase().trim()));
+        const catalogCount = COMMODITY_CATEGORIES[tab.key]?.length || uniqueComms.size || 0;
+        stats[tab.key] = {
+          quotes: ratesInCat.length,
+          crops: uniqueComms.size || catalogCount
+        };
+      }
+    });
+    return stats;
+  }, [allRates]);
+
+  // Filter pipeline (client-side)
+  const filtered = useMemo(() => {
+    return allRates.filter(item => {
+      // Category filter
+      if (category !== 'All') {
+        const cat = item.category || getCommodityCategory(item.commodity);
+        if (cat !== category) return false;
+      }
+      // State / Area filter
+      if (selectedState !== 'All') {
+        if (item.state !== selectedState) return false;
+      }
+      // Gainers / Losers Mode filter
+      if (filterMode === 'gainers' && item.direction !== 'UP') return false;
+      if (filterMode === 'losers' && item.direction !== 'DOWN') return false;
+      // Search filter
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        return (
+          item.commodity.toLowerCase().includes(q) ||
+          item.market.toLowerCase().includes(q) ||
+          item.state.toLowerCase().includes(q) ||
+          (item.district && item.district.toLowerCase().includes(q))
+        );
+      }
+      return true;
+    });
+  }, [allRates, category, selectedState, filterMode, search]);
 
   // Sort
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortBy === 'price') return b.current_price - a.current_price;
-    if (sortBy === 'commodity') return a.commodity.localeCompare(b.commodity);
-    // default: absolute day change %
-    return Math.abs(b.day_change_pct) - Math.abs(a.day_change_pct);
-  });
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      if (sortBy === 'price') return b.current_price - a.current_price;
+      if (sortBy === 'commodity') return a.commodity.localeCompare(b.commodity);
+      // default: absolute day change %
+      return Math.abs(b.day_change_pct) - Math.abs(a.day_change_pct);
+    });
+  }, [filtered, sortBy]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const pageItems = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const gainersCount = allRates.filter(r =>
-    (category === 'All' || (r.category || getCommodityCategory(r.commodity)) === category) &&
-    r.direction === 'UP'
-  ).length;
-  const losersCount = allRates.filter(r =>
-    (category === 'All' || (r.category || getCommodityCategory(r.commodity)) === category) &&
-    r.direction === 'DOWN'
-  ).length;
+  const gainersCount = filtered.filter(r => r.direction === 'UP').length;
+  const losersCount = filtered.filter(r => r.direction === 'DOWN').length;
+  const stableCount = filtered.filter(r => r.direction === 'STABLE').length;
+
+  const isFiltered = category !== 'All' || selectedState !== 'All' || search !== '' || filterMode !== 'all';
 
   return (
     <div className="glass-panel rounded-3xl p-5 sm:p-7 border border-slate-700/60 shadow-2xl space-y-5">
 
-      {/* ── Header ── */}
+      {/* ── Header & Mandi Pulse ── */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-xs font-semibold text-emerald-400 mb-2">
@@ -126,16 +177,26 @@ export default function DailyMarketRatesBoard({ onSelectCommodity }) {
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight font-display flex flex-wrap items-center gap-2">
             Daily Mandi Rates &amp; Price Fluctuations
             <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              {sorted.length.toLocaleString('en-IN')} Live Records
+              {sorted.length.toLocaleString('en-IN')} Live Quotes
             </span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Complete real-time 🔺UP &amp; 🔻DOWN movements across <strong className="text-white">123 commodities</strong> and <strong className="text-white">1,622 mandis</strong> in 31 states.
+            Complete real-time 🔺UP &amp; 🔻DOWN movements across <strong className="text-emerald-400">123 distinct commodities</strong> and <strong className="text-white">1,622 mandis</strong> across 31 states.
           </p>
         </div>
 
         {/* Controls: Refresh + View Toggle */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {isFiltered && (
+            <button 
+              onClick={handleResetFilters}
+              className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-amber-400 hover:text-amber-300 font-bold transition flex items-center gap-1.5 shadow-sm"
+              title="Reset All Filters">
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset</span>
+            </button>
+          )}
+
           <div className="flex items-center bg-slate-900 rounded-xl p-1 border border-slate-800">
             <button onClick={() => setViewMode('grid')} title="Grid view"
               className={`p-2 rounded-lg transition ${viewMode === 'grid' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-400 hover:text-white'}`}>
@@ -154,77 +215,153 @@ export default function DailyMarketRatesBoard({ onSelectCommodity }) {
         </div>
       </div>
 
-      {/* ── Category Filter Pills ── */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-wrap">
-        {CATEGORY_FILTERS.map((tab) => {
-          const tabCount = tab.key === 'All'
-            ? allRates.length
-            : allRates.filter(r => (r.category || getCommodityCategory(r.commodity)) === tab.key).length;
-          const isActive = category === tab.key;
-          return (
-            <button key={tab.key} onClick={() => setCategory(tab.key)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-                isActive
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 scale-[1.02]'
-                  : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
-              }`}>
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
-                isActive ? 'bg-slate-950/30 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>{tabCount.toLocaleString('en-IN')}</span>
-            </button>
-          );
-        })}
+      {/* ── Live Market Pulse Stats Strip ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800/80">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <TrendingUp className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-[11px] text-slate-400 uppercase font-bold">Mandi Gainers</div>
+            <div className="text-base font-black text-emerald-400 flex items-center gap-1">
+              ▲ {gainersCount.toLocaleString('en-IN')}
+              <span className="text-[10px] text-slate-400 font-normal">mandi quotes</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <TrendingDown className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-[11px] text-slate-400 uppercase font-bold">Mandi Losers</div>
+            <div className="text-base font-black text-rose-400 flex items-center gap-1">
+              ▼ {losersCount.toLocaleString('en-IN')}
+              <span className="text-[10px] text-slate-400 font-normal">mandi quotes</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/20">
+            <Zap className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-[11px] text-slate-400 uppercase font-bold">Market Sentiment</div>
+            <div className="text-base font-black text-white">
+              {gainersCount > losersCount ? 'Bullish (Rising)' : gainersCount < losersCount ? 'Bearish (Cooling)' : 'Balanced'}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-teal-500/10 text-teal-300 border border-teal-500/20">
+            <Activity className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-[11px] text-slate-400 uppercase font-bold">Crops in View</div>
+            <div className="text-base font-black text-white">
+              {categoryStats[category]?.crops || 123} <span className="text-[10px] text-slate-400 font-normal">distinct crops</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* ── Mode + Sort + Search Row ── */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* ── Category Filter Pills with Dual Counters (Quotes + Crops) ── */}
+      {showCategoryFilters && <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+          <span>Crop Categories &amp; Mandi Live Volume:</span>
+          <span className="text-[11px] text-slate-400">Pills show: <strong className="text-slate-300">Live Quotes</strong> · <span className="text-emerald-400 font-semibold">Crops</span></span>
+        </div>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-wrap">
+          {CATEGORY_FILTERS.map((tab) => {
+            const stats = categoryStats[tab.key] || { quotes: 0, crops: 0 };
+            const isActive = category === tab.key;
+            return (
+              <button key={tab.key} onClick={() => setCategory(tab.key)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                  isActive
+                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 scale-[1.02]'
+                    : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                }`}>
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
+                  isActive ? 'bg-slate-950/30 text-white' : 'bg-slate-800 text-slate-300'
+                }`}>
+                  {stats.quotes.toLocaleString('en-IN')} <span className="opacity-70">({stats.crops} crops)</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>}
+
+      {/* ── Area / State + Mode + Sort + Search Row ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
         {/* Gainers / Losers / All tabs */}
-        <div className="flex items-center bg-slate-900 rounded-xl p-1 border border-slate-800 flex-shrink-0">
+        <div className="lg:col-span-4 flex items-center bg-slate-900 rounded-xl p-1 border border-slate-800">
           <button onClick={() => setFilterMode('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${filterMode === 'all' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>
-            All ({filtered.length > 0 ? filtered.length : sorted.length})
+            className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold transition text-center ${filterMode === 'all' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>
+            All ({filtered.length.toLocaleString('en-IN')})
           </button>
           <button onClick={() => setFilterMode('gainers')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${filterMode === 'gainers' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-emerald-400/80 hover:text-emerald-400'}`}>
+            className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${filterMode === 'gainers' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-emerald-400/80 hover:text-emerald-400'}`}>
             <TrendingUp className="w-3 h-3" />
-            Gainers ▲{gainersCount}
+            ▲{gainersCount}
           </button>
           <button onClick={() => setFilterMode('losers')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${filterMode === 'losers' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 shadow-sm' : 'text-rose-400/80 hover:text-rose-400'}`}>
+            className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${filterMode === 'losers' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 shadow-sm' : 'text-rose-400/80 hover:text-rose-400'}`}>
             <TrendingDown className="w-3 h-3" />
-            Losers ▼{losersCount}
+            ▼{losersCount}
           </button>
         </div>
 
+        {/* Area / State Filter */}
+        <div className="lg:col-span-3 flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5">
+          <MapPin className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+          <span className="text-xs text-slate-400 flex-shrink-0">Area:</span>
+          <select 
+            value={selectedState} 
+            onChange={e => setSelectedState(e.target.value)}
+            className="w-full bg-transparent text-xs text-white outline-none cursor-pointer">
+            <option value="All" className="bg-slate-900 text-white">All India (31 States)</option>
+            {availableStates.map(st => (
+              <option key={st} value={st} className="bg-slate-900 text-white">{st}</option>
+            ))}
+          </select>
+        </div>
+
         {/* Sort */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-xs text-slate-400">Sort:</span>
-          <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-            className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
-            <option value="change">% Change (High to Low)</option>
-            <option value="price">Price (High to Low)</option>
-            <option value="commodity">Commodity (A-Z)</option>
+        <div className="lg:col-span-2 flex items-center gap-1.5 bg-slate-900 border border-slate-700/80 rounded-xl px-2.5 py-1.5">
+          <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+          <select 
+            value={sortBy} 
+            onChange={e => setSortBy(e.target.value)}
+            className="w-full bg-transparent text-xs text-white outline-none cursor-pointer">
+            <option value="change" className="bg-slate-900 text-white">% Change (High-Low)</option>
+            <option value="price" className="bg-slate-900 text-white">Price (High-Low)</option>
+            <option value="commodity" className="bg-slate-900 text-white">Commodity (A-Z)</option>
           </select>
         </div>
 
         {/* Search */}
-        <div className="relative flex-1">
+        <div className="lg:col-span-3 relative">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
-            placeholder="Search commodity, market, or state..."
+            placeholder="Search crop, mandi, district..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full bg-slate-900/90 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:ring-2 focus:ring-emerald-500 outline-none transition"
+            className="w-full bg-slate-900/90 border border-slate-700 rounded-xl pl-9 pr-7 py-2 text-xs text-white focus:ring-2 focus:ring-emerald-500 outline-none transition"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-3 top-2 text-slate-400 hover:text-white text-xs">✕</button>
+            <button onClick={() => setSearch('')} className="absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs">✕</button>
           )}
         </div>
       </div>
+
 
       {/* ── Content ── */}
       {loading ? (

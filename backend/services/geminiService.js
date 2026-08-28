@@ -3,7 +3,7 @@ require('dotenv').config();
 class GeminiService {
   constructor() {
     this.apiKey = process.env.GEMINI_API_KEY || '';
-    this.model = 'gemini-1.5-flash';
+    this.model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     this.cache = new Map();
     this.cacheTTL = 30 * 60 * 1000; // 30 min cache (conserve quota)
   }

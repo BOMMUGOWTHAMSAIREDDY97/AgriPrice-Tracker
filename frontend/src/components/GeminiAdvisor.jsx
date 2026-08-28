@@ -287,6 +287,11 @@ export default function GeminiAdvisor({
             <p className="text-xs text-slate-400 mt-0.5">
               Live generative market advice with native audio in 9 Indian languages
             </p>
+            {advisory?.status === 'fallback' && (
+              <span className="inline-flex mt-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                Local farming guidance active
+              </span>
+            )}
           </div>
         </div>
 

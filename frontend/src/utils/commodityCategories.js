@@ -143,7 +143,8 @@ export const CATEGORY_ICONS = {
   'Millets & Cereals': '🌾',
   'Pulses & Legumes': '🫘',
   'Fruits': '🍎',
-  'Oilseeds & Cash Crops': '🌻'
+  'Oilseeds & Cash Crops': '🌻',
+  'Other': '🌿'
 };
 
 export const CATEGORY_COLORS = {
@@ -152,18 +153,20 @@ export const CATEGORY_COLORS = {
   'Millets & Cereals': 'bg-amber-500/10 text-amber-300 border-amber-500/30',
   'Pulses & Legumes': 'bg-orange-500/10 text-orange-300 border-orange-500/30',
   'Fruits': 'bg-pink-500/10 text-pink-300 border-pink-500/30',
-  'Oilseeds & Cash Crops': 'bg-teal-500/10 text-teal-300 border-teal-500/30'
+  'Oilseeds & Cash Crops': 'bg-teal-500/10 text-teal-300 border-teal-500/30',
+  'Other': 'bg-slate-500/10 text-slate-300 border-slate-500/30'
 };
 
 // Fast lookup map from commodity name to category
 export const COMMODITY_TO_CATEGORY = {};
 Object.entries(COMMODITY_CATEGORIES).forEach(([cat, list]) => {
   list.forEach(comm => {
-    COMMODITY_TO_CATEGORY[comm.toLowerCase()] = cat;
+    COMMODITY_TO_CATEGORY[comm.toLowerCase().trim()] = cat;
   });
 });
 
 export function getCommodityCategory(commodityName = '') {
-  if (!commodityName) return 'Vegetables';
-  return COMMODITY_TO_CATEGORY[commodityName.toLowerCase()] || 'Vegetables';
+  if (!commodityName) return 'Other';
+  return COMMODITY_TO_CATEGORY[commodityName.toLowerCase().trim()] || 'Other';
 }
+

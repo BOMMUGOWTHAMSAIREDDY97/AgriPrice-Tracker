@@ -20,7 +20,6 @@ import KPICard from '../components/KPICard';
 import PriceTrendChart from '../components/PriceTrendChart';
 import MarketComparisonChart from '../components/MarketComparisonChart';
 import DecisionBadge from '../components/DecisionBadge';
-import ProfitSimulator from '../components/ProfitSimulator';
 import GeminiAdvisor from '../components/GeminiAdvisor';
 import FilterBar from '../components/FilterBar';
 import DailyMarketRatesBoard from '../components/DailyMarketRatesBoard';
@@ -331,17 +330,9 @@ export default function Dashboard() {
         action={forecastData?.recommendation?.action || (expectedChange >= 3 ? 'WAIT' : expectedChange <= -3 ? 'SELL' : 'MONITOR')}
       />
 
-      {/* Interactive What-If Profit Simulator */}
-      <ProfitSimulator
-        commodity={selectedCommodity}
-        market={selectedMarket}
-        currentModalPrice={currentPrice}
-        forecastModalPrice={forecastPrice}
-        horizon={7}
-      />
-
       {/* Daily Live Mandi Rates & Up/Down Price Movements Board */}
       <DailyMarketRatesBoard
+        showCategoryFilters={false}
         onSelectCommodity={(comm, mkt) => {
           if (comm) setSelectedCommodity(comm);
           if (mkt) setSelectedMarket(mkt);
