@@ -4,7 +4,7 @@ import {
   RefreshCw, Globe, Check, PlayCircle, StopCircle,
   AudioLines, Radio, Play, Pause
 } from 'lucide-react';
-import { fetchGeminiAdvisory, sendGeminiChat } from '../services/api';
+import { fetchGeminiAdvisory, sendGeminiChat, API_BASE } from '../services/api';
 
 const SUPPORTED_LANGUAGES = [
   {
@@ -188,7 +188,7 @@ export default function GeminiAdvisor({
       .replace(/\n/g, ' ')
       .trim();
 
-    const audioUrl = `/api/gemini/tts-audio?text=${encodeURIComponent(cleanText)}&tl=${currentLangConfig.tl}`;
+    const audioUrl = `${API_BASE}/gemini/tts-audio?text=${encodeURIComponent(cleanText)}&tl=${currentLangConfig.tl}`;
 
     if (!audioPlayerRef.current) {
       audioPlayerRef.current = new Audio();

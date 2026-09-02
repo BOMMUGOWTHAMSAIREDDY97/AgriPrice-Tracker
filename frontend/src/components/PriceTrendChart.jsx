@@ -10,12 +10,26 @@ import {
   CartesianGrid
 } from 'recharts';
 import { Activity } from 'lucide-react';
+import { fetchPriceHistory } from '../services/api';
 
 const formatDate = (value, options) => {
   if (!value) return '';
   const date = new Date(value + 'T00:00:00Z');
   if (Number.isNaN(date.getTime())) return String(value);
   return new Intl.DateTimeFormat('en-IN', { timeZone: 'UTC', ...options }).format(date);
+};
+
+const formatSeriesData = (series = []) => {
+  return series.map(item => {
+    let dStr = item.date;
+    if (dStr && dStr.includes('T')) dStr = dStr.split('T')[0];
+    if (dStr && dStr.includes(' ')) dStr = dStr.split(' ')[0];
+    return {
+      ...item,
+      date: dStr,
+      displayDate: formatDate(dStr, { day: '2-digit', month: 'short' })
+    };
+  });
 };
 
 const RANGES = [
@@ -26,6 +40,7 @@ const RANGES = [
 ];
 
 export default function PriceTrendChart({
+  data,
   commodity = 'Tomato',
   market = 'Rajkot',
   timeframe = '30d',
@@ -33,52 +48,42 @@ export default function PriceTrendChart({
   showMovingAverage = true
 }) {
   const [activeRange, setActiveRange] = useState(timeframe);
-  const [chartData, setChartData] = useState([]);
+  const [chartData, setChartData] = useState(() => (Array.isArray(data) && data.length > 0 ? formatSeriesData(data) : []));
   const [loading, setLoading] = useState(false);
+
+  // Sync with data prop when passed and non-empty
+  useEffect(() => {
+    if (Array.isArray(data) && data.length > 0) {
+      setChartData(formatSeriesData(data));
+    }
+  }, [data]);
 
   // Keep activeRange in sync if parent changes timeframe externally
   useEffect(() => {
     setActiveRange(timeframe);
   }, [timeframe]);
 
-  // Fetch price history directly inside the chart for instant updates
+  // Fetch price history using central API service (properly respects Vercel/Render VITE_API_URL)
   const loadHistory = useCallback(async (tf) => {
     if (!commodity || !market) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        commodity,
-        market,
-        timeframe: tf,
-        _ts: Date.now()   // prevents 304 browser cache
-      });
-      const res = await fetch(`/api/price-history?${params.toString()}`, {
-        cache: 'no-store'
-      });
-      const json = await res.json();
-      const series = (json.series || []).map(item => {
-        let dStr = item.date;
-        if (dStr && dStr.includes('T')) dStr = dStr.split('T')[0];
-        if (dStr && dStr.includes(' ')) dStr = dStr.split(' ')[0];
-        return {
-          ...item,
-          date: dStr,
-          displayDate: formatDate(dStr, { day: '2-digit', month: 'short' })
-        };
-      });
-      setChartData(series);
+      const json = await fetchPriceHistory(commodity, market, tf);
+      const formatted = formatSeriesData(json.series || []);
+      if (formatted.length > 0) {
+        setChartData(formatted);
+      }
     } catch (e) {
       console.error('PriceTrendChart fetch error:', e);
-      setChartData([]);
     } finally {
       setLoading(false);
     }
   }, [commodity, market]);
 
-  // Load when commodity/market changes
+  // Load when commodity, market, or activeRange changes
   useEffect(() => {
     loadHistory(activeRange);
-  }, [loadHistory]);
+  }, [loadHistory, activeRange]);
 
   // Handle timeframe button click
   const handleRangeSelect = (val) => {
