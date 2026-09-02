@@ -4,6 +4,7 @@ class GeminiService {
   constructor() {
     this.apiKey = process.env.GEMINI_API_KEY || '';
     this.model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    this.fallbackModel = process.env.GEMINI_FALLBACK_MODEL || 'gemini-flash-latest';
     this.cache = new Map();
     this.cacheTTL = 30 * 60 * 1000; // 30 min cache (conserve quota)
   }
@@ -35,36 +36,61 @@ class GeminiService {
       parts: [{ text: prompt }]
     });
 
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents })
-      });
-
-      // Retry on rate-limit or server overload
-      if ((response.status === 429 || response.status === 503) && attempt < retries) {
-        const backoffMs = attempt * 1500; // 1.5s, 3s, 4.5s
-        console.warn(`Gemini API rate-limited (${response.status}). Retrying in ${backoffMs}ms (attempt ${attempt}/${retries})...`);
-        await this.sleep(backoffMs);
-        continue;
-      }
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Gemini API Error (${response.status}): ${errText}`);
-      }
-
-      const data = await response.json();
-      const candidate = data.candidates && data.candidates[0];
-      if (candidate && candidate.content && candidate.content.parts) {
-        return candidate.content.parts.map(p => p.text).join('\n');
-      }
-
-      throw new Error('Empty response from Gemini API');
+    // Try primary model, then fallback model if 503
+    const modelsToTry = [this.model];
+    if (this.fallbackModel && this.fallbackModel !== this.model) {
+      modelsToTry.push(this.fallbackModel);
     }
 
-    throw new Error('Gemini API unavailable after retries.');
+    for (const modelName of modelsToTry) {
+      const modelUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${this.apiKey}`;
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        const response = await fetch(modelUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents })
+        });
+
+        // On 503 (high demand), try next model after last attempt
+        if (response.status === 503) {
+          if (attempt < retries) {
+            const backoffMs = attempt * 1500;
+            console.warn(`Gemini model ${modelName} overloaded (503). Retrying in ${backoffMs}ms (attempt ${attempt}/${retries})...`);
+            await this.sleep(backoffMs);
+            continue;
+          } else {
+            console.warn(`Gemini model ${modelName} unavailable. Trying fallback...`);
+            break; // move to next model
+          }
+        }
+
+        // Retry on rate-limit
+        if (response.status === 429 && attempt < retries) {
+          const backoffMs = attempt * 1500;
+          console.warn(`Gemini API rate-limited (429). Retrying in ${backoffMs}ms (attempt ${attempt}/${retries})...`);
+          await this.sleep(backoffMs);
+          continue;
+        }
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Gemini API Error (${response.status}): ${errText}`);
+        }
+
+        const data = await response.json();
+        const candidate = data.candidates && data.candidates[0];
+        if (candidate && candidate.content && candidate.content.parts) {
+          if (modelName !== this.model) {
+            console.log(`✅ Mandi AI responded via fallback model: ${modelName}`);
+          }
+          return candidate.content.parts.map(p => p.text).join('\n');
+        }
+
+        throw new Error('Empty response from Gemini API');
+      }
+    }
+
+    throw new Error('Gemini API unavailable after retries on all models.');
   }
 
   async getAdvisory({ commodity, market, state, currentPrice, forecastPrice, expectedChange, horizon = 7, action = 'WAIT', language = 'English' }) {

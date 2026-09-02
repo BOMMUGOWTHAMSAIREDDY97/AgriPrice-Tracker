@@ -14,7 +14,8 @@ import {
   SlidersHorizontal,
   MapPin,
   RotateCcw,
-  Zap
+  Zap,
+  Sprout
 } from 'lucide-react';
 import { fetchLiveRates } from '../services/api';
 import { CATEGORY_ICONS, COMMODITY_CATEGORIES, getCommodityCategory } from '../utils/commodityCategories';
@@ -165,17 +166,17 @@ export default function DailyMarketRatesBoard({ onSelectCommodity, showCategoryF
   const isFiltered = category !== 'All' || selectedState !== 'All' || search !== '' || filterMode !== 'all';
 
   return (
-    <div className="glass-panel rounded-3xl p-5 sm:p-7 border border-slate-700/60 shadow-2xl space-y-5">
+    <div className="glass-panel farm-rates-board rounded-3xl p-5 sm:p-7 border border-slate-700/60 shadow-2xl space-y-5">
 
       {/* ── Header & Mandi Pulse ── */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-xs font-semibold text-emerald-400 mb-2">
-            <Activity className="w-3.5 h-3.5" />
-            <span>Day-over-Day Live Rate Engine — All India Mandi Network</span>
+            <Sprout className="w-3.5 h-3.5" />
+            <span>Field Market Pulse &middot; All India Mandi Network</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight font-display flex flex-wrap items-center gap-2">
-            Daily Mandi Rates &amp; Price Fluctuations
+            Today's Harvest Market
             <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
               {sorted.length.toLocaleString('en-IN')} Live Quotes
             </span>
@@ -280,7 +281,7 @@ export default function DailyMarketRatesBoard({ onSelectCommodity, showCategoryF
             const isActive = category === tab.key;
             return (
               <button key={tab.key} onClick={() => setCategory(tab.key)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                className={`farm-category-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                   isActive
                     ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 scale-[1.02]'
                     : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-800'

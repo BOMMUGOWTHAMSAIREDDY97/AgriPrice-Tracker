@@ -3,6 +3,7 @@ services:
     name: agriprice-tracker
     runtime: node
     plan: free
+    rootDir: .
     buildCommand: npm run build
     startCommand: npm start
     envVars:
@@ -12,5 +13,7 @@ services:
         value: 10000
       - key: NODE_VERSION
         value: 20.11.0
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
       - key: GEMINI_API_KEY
         sync: false  # Set this in Render Dashboard > Environment
