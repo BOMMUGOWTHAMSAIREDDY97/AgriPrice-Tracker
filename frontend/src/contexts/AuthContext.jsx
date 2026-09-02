@@ -59,7 +59,8 @@ export function AuthProvider({ children }) {
         return;
       }
       if (err.code === 'auth/unauthorized-domain') {
-        setError('This domain/localhost is not authorized in your Firebase Console. Add "localhost" to Firebase Auth Authorized Domains.');
+        const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'this domain';
+        setError(`This domain "${currentHost}" is not authorized in your Firebase Console. Go to Firebase Console > Authentication > Settings > Authorized domains and add "${currentHost}".`);
       } else if (err.code === 'auth/invalid-api-key' || err.code === 'auth/api-key-not-found') {
         setError('Invalid Firebase API key. Please check your .env file or use Demo Mode.');
       } else {
