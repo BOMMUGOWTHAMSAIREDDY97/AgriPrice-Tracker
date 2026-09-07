@@ -20,7 +20,7 @@ export default defineConfig({
           // React core — always cached together
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           // Firebase — large SDK, change rarely
-          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          'vendor-firebase': ['firebase/app', 'firebase/auth'],
           // Recharts — heavy charting lib, separate cache bucket
           'vendor-recharts': ['recharts'],
           // Lucide icons — tree-shaken but still sizeable

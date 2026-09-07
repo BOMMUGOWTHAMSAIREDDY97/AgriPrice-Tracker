@@ -13,26 +13,56 @@ export function AuthProvider({ children }) {
     // Demo access should never bypass the login screen after a reload.
     localStorage.removeItem(LEGACY_LOCAL_STORAGE_KEY);
 
+    let isMounted = true;
+
+    // Safety fallback: ensure loading state finishes within 1.5s even if Firebase listener hangs on Vercel
+    const timeoutId = setTimeout(() => {
+      if (isMounted) {
+        setUser((current) => (current === undefined ? null : current));
+      }
+    }, 1500);
+
     // 2. If Firebase is configured and auth exists, subscribe to auth state changes
     if (isFirebaseConfigured && auth) {
-      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        if (firebaseUser) {
-          setUser({
-            uid: firebaseUser.uid,
-            displayName: firebaseUser.displayName || 'Agri User',
-            email: firebaseUser.email || '',
-            photoURL: firebaseUser.photoURL || null,
-            isGuest: false
-          });
-        } else {
-          setUser(null);
-        }
-      });
-      return unsubscribe;
+      try {
+        const unsubscribe = onAuthStateChanged(
+          auth,
+          (firebaseUser) => {
+            if (!isMounted) return;
+            if (firebaseUser) {
+              setUser({
+                uid: firebaseUser.uid,
+                displayName: firebaseUser.displayName || 'Agri User',
+                email: firebaseUser.email || '',
+                photoURL: firebaseUser.photoURL || null,
+                isGuest: false
+              });
+            } else {
+              setUser(null);
+            }
+          },
+          (err) => {
+            console.warn('Firebase auth listener error:', err);
+            if (isMounted) setUser(null);
+          }
+        );
+        return () => {
+          isMounted = false;
+          clearTimeout(timeoutId);
+          unsubscribe();
+        };
+      } catch (err) {
+        console.warn('Firebase auth setup error:', err);
+        if (isMounted) setUser(null);
+      }
     } else {
-      // Firebase not configured - show login until a demo role is selected.
       setUser(null);
     }
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   const signInWithGoogle = async () => {

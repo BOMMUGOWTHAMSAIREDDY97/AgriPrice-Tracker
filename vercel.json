@@ -5,11 +5,11 @@
   "framework": null,
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://agriprice-tracker-2.onrender.com/api/$1"
+      "source": "/api/:path*",
+      "destination": "https://agriprice-tracker-2.onrender.com/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ],
