@@ -202,9 +202,7 @@ Provide concise, courteous, and actionable insights in INR (₹/quintal or ₹/k
 
       return {
         status: 'fallback',
-        reply: isQuotaError
-          ? `Mandi AI is temporarily using local market guidance because the Gemini daily limit has been reached. For ${commodity} in ${market}, compare the current modal price of ₹${currentPrice}/quintal with the forecast target of ₹${forecastPrice}/quintal, sell in batches, and watch fresh arrivals before committing your full stock.`
-          : `Mandi AI is temporarily unavailable. For ${commodity} in ${market}, review the current modal price of ₹${currentPrice}/quintal against the forecast target of ₹${forecastPrice}/quintal, then use phased selling and monitor local arrivals.`
+        reply: `For ${commodity} in ${market}, review the current modal price of ₹${currentPrice}/quintal against the forecast target of ₹${forecastPrice}/quintal, then use phased selling and monitor local market arrivals.`
       };
     }
   }

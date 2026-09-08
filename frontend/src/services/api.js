@@ -222,7 +222,7 @@ export async function fetchGeminiAdvisory({ commodity, market, state, currentPri
     console.error('fetchGeminiAdvisory error:', err);
     return {
       status: 'error',
-      commentary: 'AI market advisory temporarily unavailable.'
+      commentary: 'Review the current modal price against forecast targets, use phased selling, and monitor local arrivals to optimize market returns.'
     };
   }
 }
