@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import KPICard from '../components/KPICard';
 import PriceTrendChart from '../components/PriceTrendChart';
-import MarketComparisonChart from '../components/MarketComparisonChart';
 import DecisionBadge from '../components/DecisionBadge';
 import GeminiAdvisor from '../components/GeminiAdvisor';
 import FilterBar from '../components/FilterBar';
@@ -29,7 +28,6 @@ import {
   fetchMarkets, 
   fetchDashboardKPIs, 
   fetchPriceHistory, 
-  fetchMarketComparison, 
   fetchForecast 
 } from '../services/api';
 
@@ -52,7 +50,6 @@ export default function Dashboard() {
   });
 
   const [priceHistory, setPriceHistory] = useState([]);
-  const [marketComparison, setMarketComparison] = useState({});
   const [forecastData, setForecastData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -92,16 +89,14 @@ export default function Dashboard() {
     async function loadDashboardData() {
       setLoading(true);
       try {
-        const [kpiRes, histRes, compRes, foreRes] = await Promise.all([
+        const [kpiRes, histRes, foreRes] = await Promise.all([
           fetchDashboardKPIs(selectedCommodity, selectedMarket),
           fetchPriceHistory(selectedCommodity, selectedMarket, timeframe),
-          fetchMarketComparison(selectedCommodity),
           fetchForecast(selectedCommodity, selectedMarket, 7)
         ]);
 
         setKpis(kpiRes);
         setPriceHistory(histRes.series || []);
-        setMarketComparison(compRes);
         setForecastData(foreRes);
       } catch (err) {
         console.error('Error loading dashboard data:', err);
@@ -338,13 +333,6 @@ export default function Dashboard() {
           if (mkt) setSelectedMarket(mkt);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-      />
-
-      {/* Cross-Mandi Arbitrage Comparison Preview */}
-      <MarketComparisonChart
-        comparisonData={marketComparison}
-        commodity={selectedCommodity}
-        onSelectMarket={(mkt) => setSelectedMarket(mkt)}
       />
 
     </div>
