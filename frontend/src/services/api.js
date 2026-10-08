@@ -1,5 +1,11 @@
 export const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api';
 
+// Pre-warm the backend immediately on import so cold-start servers (Render free tier)
+// are awake by the time the dashboard actually needs data.
+(function warmUpBackend() {
+  fetch(`${API_BASE}/health`, { method: 'GET', cache: 'no-store' }).catch(() => {});
+})();
+
 
 export async function fetchHealth() {
   try {

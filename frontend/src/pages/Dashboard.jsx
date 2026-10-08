@@ -53,47 +53,29 @@ export default function Dashboard() {
   const [forecastData, setForecastData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load initial dropdowns
+  // Load all initial data in parallel to avoid waterfall delay
   useEffect(() => {
-    async function loadMeta() {
-      const [commList, stateList] = await Promise.all([
-        fetchCommodities(),
-        fetchStates()
-      ]);
-      setCommodities(commList);
-      setStates(stateList);
-
-      const mktList = await fetchMarkets('Tomato', '');
-      setMarkets(mktList);
-      if (mktList.length > 0 && !mktList.includes('Rajkot(Veg.Sub Yard)')) {
-        setSelectedMarket(mktList[0]);
-      }
-    }
-    loadMeta();
-  }, []);
-
-  // Update markets when commodity or state changes
-  useEffect(() => {
-    async function updateMarkets() {
-      const mktList = await fetchMarkets(selectedCommodity, selectedState);
-      setMarkets(mktList);
-      if (mktList.length > 0 && !mktList.includes(selectedMarket)) {
-        setSelectedMarket(mktList[0]);
-      }
-    }
-    updateMarkets();
-  }, [selectedCommodity, selectedState]);
-
-  // Load main intelligence data
-  useEffect(() => {
-    async function loadDashboardData() {
+    async function loadAll() {
       setLoading(true);
       try {
-        const [kpiRes, histRes, foreRes] = await Promise.all([
+        // Fire all requests simultaneously
+        const [commList, stateList, mktList, kpiRes, histRes, foreRes] = await Promise.all([
+          fetchCommodities(),
+          fetchStates(),
+          fetchMarkets(selectedCommodity, selectedState),
           fetchDashboardKPIs(selectedCommodity, selectedMarket),
           fetchPriceHistory(selectedCommodity, selectedMarket, timeframe),
           fetchForecast(selectedCommodity, selectedMarket, 7)
         ]);
+
+        setCommodities(commList);
+        setStates(stateList);
+        setMarkets(mktList);
+
+        // If default market isn't in the list, use first available
+        if (mktList.length > 0 && !mktList.includes(selectedMarket)) {
+          setSelectedMarket(mktList[0]);
+        }
 
         setKpis(kpiRes);
         setPriceHistory(histRes.series || []);
@@ -104,10 +86,42 @@ export default function Dashboard() {
         setLoading(false);
       }
     }
+    loadAll();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
 
-    if (selectedCommodity) {
-      loadDashboardData();
+  // Reload dashboard data when filters change (after initial mount)
+  const isFirstRender = React.useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
+    async function reloadOnFilterChange() {
+      setLoading(true);
+      try {
+        const [mktList, kpiRes, histRes, foreRes] = await Promise.all([
+          fetchMarkets(selectedCommodity, selectedState),
+          fetchDashboardKPIs(selectedCommodity, selectedMarket),
+          fetchPriceHistory(selectedCommodity, selectedMarket, timeframe),
+          fetchForecast(selectedCommodity, selectedMarket, 7)
+        ]);
+
+        setMarkets(mktList);
+        if (mktList.length > 0 && !mktList.includes(selectedMarket)) {
+          setSelectedMarket(mktList[0]);
+        }
+
+        setKpis(kpiRes);
+        setPriceHistory(histRes.series || []);
+        setForecastData(foreRes);
+      } catch (err) {
+        console.error('Error reloading dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (selectedCommodity) reloadOnFilterChange();
   }, [selectedCommodity, selectedMarket, selectedState, timeframe]);
 
   const handleResetDemo = () => {

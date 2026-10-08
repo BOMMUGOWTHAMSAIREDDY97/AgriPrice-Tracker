@@ -15,12 +15,12 @@ export function AuthProvider({ children }) {
 
     let isMounted = true;
 
-    // Safety fallback: ensure loading state finishes within 1.5s even if Firebase listener hangs on Vercel
+    // Safety fallback: ensure loading state finishes quickly even if Firebase listener hangs on Vercel
     const timeoutId = setTimeout(() => {
       if (isMounted) {
         setUser((current) => (current === undefined ? null : current));
       }
-    }, 1500);
+    }, 400);
 
     // 2. If Firebase is configured and auth exists, subscribe to auth state changes
     if (isFirebaseConfigured && auth) {
