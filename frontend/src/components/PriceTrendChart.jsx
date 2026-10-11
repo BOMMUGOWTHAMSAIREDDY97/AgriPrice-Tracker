@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -10,7 +10,6 @@ import {
   CartesianGrid
 } from 'recharts';
 import { Activity } from 'lucide-react';
-import { fetchPriceHistory } from '../services/api';
 
 const formatDate = (value, options) => {
   if (!value) return '';
@@ -48,47 +47,16 @@ export default function PriceTrendChart({
   showMovingAverage = true
 }) {
   const [activeRange, setActiveRange] = useState(timeframe);
-  const [chartData, setChartData] = useState(() => (Array.isArray(data) && data.length > 0 ? formatSeriesData(data) : []));
-  const [loading, setLoading] = useState(false);
-
-  // Sync with data prop when passed and non-empty
-  useEffect(() => {
-    if (Array.isArray(data) && data.length > 0) {
-      setChartData(formatSeriesData(data));
-    }
-  }, [data]);
+  const chartData = Array.isArray(data) ? formatSeriesData(data) : [];
 
   // Keep activeRange in sync if parent changes timeframe externally
   useEffect(() => {
     setActiveRange(timeframe);
   }, [timeframe]);
 
-  // Fetch price history using central API service (properly respects Vercel/Render VITE_API_URL)
-  const loadHistory = useCallback(async (tf) => {
-    if (!commodity || !market) return;
-    setLoading(true);
-    try {
-      const json = await fetchPriceHistory(commodity, market, tf);
-      const formatted = formatSeriesData(json.series || []);
-      if (formatted.length > 0) {
-        setChartData(formatted);
-      }
-    } catch (e) {
-      console.error('PriceTrendChart fetch error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [commodity, market]);
-
-  // Load when commodity, market, or activeRange changes
-  useEffect(() => {
-    loadHistory(activeRange);
-  }, [loadHistory, activeRange]);
-
   // Handle timeframe button click
   const handleRangeSelect = (val) => {
     setActiveRange(val);
-    loadHistory(val);
     if (onTimeframeChange) {
       onTimeframeChange(val);
     }
@@ -189,12 +157,11 @@ export default function PriceTrendChart({
             <button
               key={r.value}
               onClick={() => handleRangeSelect(r.value)}
-              disabled={loading}
               className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all select-none ${
                 activeRange === r.value
                   ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25 scale-105'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/70 cursor-pointer'
-              } disabled:opacity-60`}
+              }`}
             >
               {r.label}
             </button>
@@ -204,12 +171,7 @@ export default function PriceTrendChart({
 
       {/* ── CHART ── */}
       <div className="w-full h-72 sm:h-80 relative flex-1">
-        {loading ? (
-          <div className="h-full flex flex-col items-center justify-center gap-3">
-            <div className="w-7 h-7 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs text-slate-400">Loading {activeRange.toUpperCase()} price history...</span>
-          </div>
-        ) : chartData.length === 0 ? (
+        {chartData.length === 0 ? (
           <div className="h-full flex items-center justify-center text-slate-500 text-sm">
             No historical data available for selected filter.
           </div>
