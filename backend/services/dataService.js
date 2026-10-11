@@ -14,6 +14,61 @@ class DataService {
     this.commodityMarketIndex = new Map();
   }
 
+  canonicalizeStateName(value = '') {
+    const n = String(value || '').trim();
+    const aliasMap = {
+      'jammu and kashmir': 'Jammu & Kashmir',
+      'jammu kashmir': 'Jammu & Kashmir',
+      'jammu kashmir and': 'Jammu & Kashmir',
+      'tamilnadu': 'Tamil Nadu',
+      'tamil nadu': 'Tamil Nadu',
+      'orissa': 'Odisha',
+      'odisha': 'Odisha',
+      'telengana': 'Telangana',
+      'telangana': 'Telangana',
+      'lakshadweep': 'Lakshadweep',
+      'andaman and nicobar islands': 'Andaman and Nicobar Islands',
+      'andaman nicobar islands': 'Andaman and Nicobar Islands'
+    };
+
+    const normalized = n
+      .replace(/&/g, ' and ')
+      .replace(/[^a-zA-Z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    return aliasMap[normalized] || n.trim();
+  }
+
+  normalizeStateKey(value = '') {
+    const canonical = this.canonicalizeStateName(value);
+    return String(canonical || '')
+      .replace(/&/g, ' and ')
+      .replace(/[^a-zA-Z0-9]+/g, ' ')
+      .replace(/\band\b/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  pickPreferredStateName(existing = '', candidate = '') {
+    const score = (value = '') => {
+      let score = 0;
+      if (!value) return score;
+      if (value.includes('&')) score += 10;
+      if (value.includes(' ')) score += 5;
+      if (value.toLowerCase().includes('and')) score += 2;
+      if (/[A-Z]/.test(value)) score += 1;
+      if (value.toLowerCase().includes('kashmir') || value.toLowerCase().includes('tamil') || value.toLowerCase().includes('odisha')) score += 2;
+      return score;
+    };
+
+    if (!existing) return candidate;
+    if (!candidate) return existing;
+    return score(candidate) > score(existing) ? candidate : existing;
+  }
+
   async ensureLoaded() {
     if (this.isLoaded) return;
     if (this.loadingPromise) return this.loadingPromise;
@@ -193,6 +248,16 @@ class DataService {
       const commKey = (record.commodity || '').toLowerCase().trim();
       record.category = commToCategory[commKey] || 'Other';
 
+      const normalizedState = record.state ? String(record.state).trim() : '';
+      const stateKey = this.normalizeStateKey(normalizedState);
+      if (normalizedState && stateKey) {
+        const existingState = Array.from(stateSet).find(state => this.normalizeStateKey(state) === stateKey) || '';
+        const preferredState = this.pickPreferredStateName(existingState, this.canonicalizeStateName(normalizedState));
+        record.state = preferredState;
+        if (existingState) stateSet.delete(existingState);
+        stateSet.add(preferredState);
+      }
+
       this.records.push(record);
       if (record.commodity) commoditySet.add(record.commodity);
       if (record.market) marketSet.add(record.market);
@@ -208,7 +273,7 @@ class DataService {
 
     this.commodities = Array.from(commoditySet).sort();
     this.markets = Array.from(marketSet).sort();
-    this.states = Array.from(stateSet).sort();
+    this.states = Array.from(new Map(Array.from(stateSet).map(state => [this.normalizeStateKey(state), this.canonicalizeStateName(state)])).values()).sort();
     this.districts = Array.from(districtSet).sort();
     this.isLoaded = true;
 
@@ -244,7 +309,7 @@ class DataService {
 
     this.commodities = Array.from(commoditySet).sort();
     this.markets = Array.from(marketSet).sort();
-    this.states = Array.from(stateSet).sort();
+    this.states = Array.from(new Map(Array.from(stateSet).map(state => [this.normalizeStateKey(state), this.canonicalizeStateName(state)])).values()).sort();
     this.districts = Array.from(districtSet).sort();
 
     return addedCount;

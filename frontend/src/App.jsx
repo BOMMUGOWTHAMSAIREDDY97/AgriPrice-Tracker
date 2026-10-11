@@ -11,8 +11,6 @@ import AlertsPage from './pages/AlertsPage';
 import LoginPage from './pages/LoginPage';
 import { MapPin, Sprout, Waves } from 'lucide-react';
 
-import LiveMarketTicker from './components/LiveMarketTicker';
-
 function AppShell() {
   const { user } = useAuth();
 
@@ -42,9 +40,6 @@ function AppShell() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden relative">
-
-        {/* Live Mandi Rate Ticker Ribbon */}
-        <LiveMarketTicker />
 
         <div className="field-operations-bar" aria-label="Field operations status">
           <div className="field-operations-inner">
